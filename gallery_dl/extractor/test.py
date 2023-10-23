@@ -81,6 +81,4 @@ class TestExtractor(Extractor):
 
     @staticmethod
     def _split(value):
-        if value and value != "*":
-            return value.split(",")
-        return None
+        return value.split(",") if value and value != "*" else None

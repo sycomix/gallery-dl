@@ -61,11 +61,10 @@ class HitomiGalleryExtractor(GalleryExtractor):
 
     def __init__(self, match):
         gid = match.group(1)
-        url = "https://ltn.hitomi.la/galleries/{}.js".format(gid)
+        url = f"https://ltn.hitomi.la/galleries/{gid}.js"
         GalleryExtractor.__init__(self, match, url)
         self.info = None
-        self.session.headers["Referer"] = "{}/reader/{}.html".format(
-            self.root, gid)
+        self.session.headers["Referer"] = f"{self.root}/reader/{gid}.html"
 
     def metadata(self, page):
         self.info = info = json.loads(page.partition("=")[2])
@@ -143,11 +142,7 @@ class HitomiGalleryExtractor(GalleryExtractor):
             frontends = 2 if inum < 0x30 else 3
             inum = 1 if inum < 0x09 else inum
 
-            url = "https://{}b.hitomi.la/images/{}/{}/{}.{}".format(
-                chr(97 + (inum % frontends)),
-                ihash[-1], ihash[-3:-1], ihash,
-                idata["extension"],
-            )
+            url = f'https://{chr(97 + inum % frontends)}b.hitomi.la/images/{ihash[-1]}/{ihash[-3:-1]}/{ihash}.{idata["extension"]}'
             result.append((url, idata))
         return result
 
@@ -180,9 +175,9 @@ class HitomiTagExtractor(Extractor):
             self.tag = tag
 
     def items(self):
-        url = "https://ltn.hitomi.la/{}/{}.nozomi".format(self.type, self.tag)
+        url = f"https://ltn.hitomi.la/{self.type}/{self.tag}.nozomi"
         data = {"_extractor": HitomiGalleryExtractor}
 
         for gallery_id in decode_nozomi(self.request(url).content):
-            url = "https://hitomi.la/galleries/{}.html".format(gallery_id)
+            url = f"https://hitomi.la/galleries/{gallery_id}.html"
             yield Message.Queue, url, data

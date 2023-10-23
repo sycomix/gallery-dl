@@ -73,13 +73,12 @@ class _8musesAlbumExtractor(Extractor):
                 self.request(url).text,
                 'id="ractive-public" type="text/plain">', '</script>')[0])
 
-            images = data.get("pictures")
-            if images:
+            if images := data.get("pictures"):
                 count = len(images)
                 album = self._make_album(data["album"])
                 yield Message.Directory, {"album": album, "count": count}
                 for num, image in enumerate(images, 1):
-                    url = self.root + "/image/fl/" + image["publicUri"]
+                    url = f"{self.root}/image/fl/" + image["publicUri"]
                     img = {
                         "url"      : url,
                         "page"     : num,
@@ -90,10 +89,9 @@ class _8musesAlbumExtractor(Extractor):
                     }
                     yield Message.Url, url, img
 
-            albums = data.get("albums")
-            if albums:
+            if albums := data.get("albums"):
                 for album in albums:
-                    url = self.root + "/comics/album/" + album["permalink"]
+                    url = f"{self.root}/comics/album/" + album["permalink"]
                     yield Message.Queue, url, {
                         "url"       : url,
                         "name"      : album["name"],
@@ -105,8 +103,7 @@ class _8musesAlbumExtractor(Extractor):
                 return
             path, _, num = self.path.rstrip("/").rpartition("/")
             path = path if num.isdecimal() else self.path
-            url = "{}{}/{}{}".format(
-                self.root, path, data["page"] + 1, self.params)
+            url = f'{self.root}{path}/{data["page"] + 1}{self.params}'
 
     def _make_album(self, album):
         return {

@@ -212,7 +212,7 @@ class TestConfigFiles(unittest.TestCase):
             with open(path) as fp:
                 return json.load(fp)
         except FileNotFoundError:
-            raise unittest.SkipTest(path + " not available")
+            raise unittest.SkipTest(f"{path} not available")
 
 
 if __name__ == '__main__':

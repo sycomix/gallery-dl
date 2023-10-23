@@ -51,7 +51,7 @@ class WeiboExtractor(Extractor):
         """Returns an iterable containing all relevant 'status' objects"""
 
     def _status_by_id(self, status_id):
-        url = "{}/detail/{}".format(self.root, status_id)
+        url = f"{self.root}/detail/{status_id}"
         page = self.request(url, fatal=False).text
         data = text.extract(page, "var $render_data = [", "][0] || {};")[0]
         return json.loads(data)["status"] if data else None
@@ -75,8 +75,7 @@ class WeiboExtractor(Extractor):
 
         if self.videos and "media_info" in page_info:
             info = page_info["media_info"]
-            url = info.get("stream_url_hd") or info.get("stream_url")
-            if url:
+            if url := info.get("stream_url_hd") or info.get("stream_url"):
                 data = text.nameext_from_url(url, {
                     "url"   : url,
                     "pid"   : 0,
@@ -85,7 +84,7 @@ class WeiboExtractor(Extractor):
                 })
                 if data["extension"] == "m3u8":
                     data["extension"] = "mp4"
-                    data["url"] = "ytdl:" + url
+                    data["url"] = f"ytdl:{url}"
                     data["_ytdl_extra"] = {"protocol": "m3u8_native"}
                 yield data
 
@@ -109,8 +108,8 @@ class WeiboUserExtractor(WeiboExtractor):
         self.user_id = match.group(1)
 
     def statuses(self):
-        url = self.root + "/api/container/getIndex"
-        params = {"page": 1, "containerid": "107603" + self.user_id[-10:]}
+        url = f"{self.root}/api/container/getIndex"
+        params = {"page": 1, "containerid": f"107603{self.user_id[-10:]}"}
 
         while True:
             data = self.request(url, params=params).json()
@@ -152,7 +151,7 @@ class WeiboStatusExtractor(WeiboExtractor):
         self.status_id = match.group(1)
 
     def statuses(self):
-        status = self._status_by_id(self.status_id)
-        if not status:
+        if status := self._status_by_id(self.status_id):
+            return (status,)
+        else:
             raise exception.NotFoundError("status")
-        return (status,)

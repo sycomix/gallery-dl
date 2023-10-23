@@ -39,7 +39,7 @@ class TestOAuthSession(unittest.TestCase):
         )
 
     def test_nonce(self, size=16):
-        nonce_values = set(oauth.nonce(size) for _ in range(size))
+        nonce_values = {oauth.nonce(size) for _ in range(size)}
 
         # uniqueness
         self.assertEqual(len(nonce_values), size)
@@ -97,17 +97,6 @@ class TestOAuthSession(unittest.TestCase):
                        oauth_token=None, oauth_token_secret=None):
         # the test server at 'term.ie' is unreachable
         raise unittest.SkipTest()
-
-        session = oauth.OAuth1Session(
-            CONSUMER_KEY, CONSUMER_SECRET,
-            oauth_token, oauth_token_secret,
-        )
-        try:
-            response = session.get(TESTSERVER + endpoint, params=params)
-            response.raise_for_status()
-            return response.text
-        except OSError:
-            raise unittest.SkipTest()
 
 
 if __name__ == "__main__":

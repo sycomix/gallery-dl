@@ -41,8 +41,8 @@ class NsfwalbumAlbumExtractor(GalleryExtractor):
         }
 
     def images(self, page):
-        iframe = self.root + "/iframe_image.php?id="
-        backend = self.root + "/backend.php"
+        iframe = f"{self.root}/iframe_image.php?id="
+        backend = f"{self.root}/backend.php"
         for image_id in text.extract_iter(page, 'data-img-id="', '"'):
             spirit = text.extract(self.request(
                 iframe + image_id).text, 'giraffe.annihilate("', '"')[0]

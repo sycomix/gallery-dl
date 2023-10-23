@@ -117,7 +117,7 @@ class WallhavenAPI():
         self.headers = {"X-API-Key": key}
 
     def info(self, wallpaper_id):
-        url = "https://wallhaven.cc/api/v1/w/" + wallpaper_id
+        url = f"https://wallhaven.cc/api/v1/w/{wallpaper_id}"
         return self._update(self._call(url)["data"])
 
     def search(self, params):

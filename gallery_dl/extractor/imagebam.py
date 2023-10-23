@@ -60,7 +60,7 @@ class ImagebamGalleryExtractor(ImagebamExtractor):
         self.gallery_key = match.group(1)
 
     def items(self):
-        url = "{}/gallery/{}".format(self.root, self.gallery_key)
+        url = f"{self.root}/gallery/{self.gallery_key}"
         page = self.request_page(url)
         if not page or ">Error<" in page:
             raise exception.NotFoundError("gallery")
@@ -92,8 +92,7 @@ class ImagebamGalleryExtractor(ImagebamExtractor):
             pages.extend(text.extract_iter(page, "\n<a href='", "'"))
             pos = page.find('"pagination_current"')
             if pos > 0:
-                url = text.extract(page, "<a href='", "'", pos)[0]
-                if url:
+                if url := text.extract(page, "<a href='", "'", pos)[0]:
                     page = self.request_page(url)
                     continue
             return pages
@@ -120,7 +119,7 @@ class ImagebamImageExtractor(ImagebamExtractor):
         self.image_key = match.group(1)
 
     def items(self):
-        page_url = "{}/image/{}".format(self.root, self.image_key)
+        page_url = f"{self.root}/image/{self.image_key}"
         data = {}
         image_url = self.get_image_data(page_url, data)
         yield Message.Version, 1

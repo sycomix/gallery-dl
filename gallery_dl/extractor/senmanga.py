@@ -36,8 +36,8 @@ class SenmangaChapterExtractor(Extractor):
     def __init__(self, match):
         Extractor.__init__(self, match)
         part = match.group(1)
-        self.chapter_url = "{}/{}/".format(self.root, part)
-        self.img_url = "{}/viewer/{}/".format(self.root, part)
+        self.chapter_url = f"{self.root}/{part}/"
+        self.img_url = f"{self.root}/viewer/{part}/"
         self.session.headers["Referer"] = self.chapter_url
 
     def items(self):

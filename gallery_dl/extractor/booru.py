@@ -73,21 +73,19 @@ class BooruExtractor(Extractor):
 
     def _extended_tags(self, post, page=None):
         if not page:
-            url = "{}/index.php?page=post&s=view&id={}".format(
-                self.root, post["id"])
+            url = f'{self.root}/index.php?page=post&s=view&id={post["id"]}'
             page = self.request(url).text
-        html = text.extract(page, '<ul id="tag-', '</ul>')[0]
-        if html:
+        if html := text.extract(page, '<ul id="tag-', '</ul>')[0]:
             tags = collections.defaultdict(list)
             pattern = re.compile(
                 r"tag-type-([^\"' ]+).*?[?;]tags=([^\"'&]+)", re.S)
             for tag_type, tag_name in pattern.findall(html):
                 tags[tag_type].append(text.unquote(tag_name))
             for key, value in tags.items():
-                post["tags_" + key] = " ".join(value)
+                post[f"tags_{key}"] = " ".join(value)
 
     def _api_request(self, params):
-        url = self.root + "/index.php?page=dapi&s=post&q=index"
+        url = f"{self.root}/index.php?page=dapi&s=post&q=index"
         return ElementTree.fromstring(self.request(url, params=params).text)
 
     def _pagination(self, params):
@@ -150,8 +148,7 @@ class BooruPoolExtractor(BooruExtractor):
         return num
 
     def metadata(self):
-        url = "{}/index.php?page=pool&s=show&id={}".format(
-            self.root, self.pool_id)
+        url = f"{self.root}/index.php?page=pool&s=show&id={self.pool_id}"
         page = self.request(url).text
 
         name, pos = text.extract(page, "<h4>Pool: ", "</h4>")

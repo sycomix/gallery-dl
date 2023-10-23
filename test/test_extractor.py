@@ -97,9 +97,7 @@ class TestExtractorModule(unittest.TestCase):
 
         # collect testcase URLs
         for extr in extractor.extractors():
-            for testcase in extr._get_tests():
-                test_urls.append((testcase[0], extr))
-
+            test_urls.extend((testcase[0], extr) for testcase in extr._get_tests())
         # iterate over all testcase URLs
         for url, extr1 in test_urls:
             matches = []
@@ -109,23 +107,22 @@ class TestExtractorModule(unittest.TestCase):
 
                 # skip DirectlinkExtractor pattern if it isn't tested
                 if extr1 != DirectlinkExtractor and \
-                        extr2 == DirectlinkExtractor:
+                            extr2 == DirectlinkExtractor:
                     continue
 
-                match = extr2.pattern.match(url)
-                if match:
+                if match := extr2.pattern.match(url):
                     matches.append(match)
 
             # fail if more or less than 1 match happened
             if len(matches) > 1:
-                msg = "'{}' gets matched by more than one pattern:".format(url)
+                msg = f"'{url}' gets matched by more than one pattern:"
                 for match in matches:
                     msg += "\n- "
                     msg += match.re.pattern
                 self.fail(msg)
 
-            if len(matches) < 1:
-                msg = "'{}' isn't matched by any pattern".format(url)
+            if not matches:
+                msg = f"'{url}' isn't matched by any pattern"
                 self.fail(msg)
 
     def test_docstrings(self):
@@ -133,11 +130,7 @@ class TestExtractorModule(unittest.TestCase):
         for extr1 in extractor.extractors():
             for extr2 in extractor.extractors():
                 if extr1 != extr2 and extr1.__doc__ and extr2.__doc__:
-                    self.assertNotEqual(
-                        extr1.__doc__,
-                        extr2.__doc__,
-                        "{} <-> {}".format(extr1, extr2),
-                    )
+                    self.assertNotEqual(extr1.__doc__, extr2.__doc__, f"{extr1} <-> {extr2}")
 
     def test_names(self):
         """Ensure extractor classes are named CategorySubcategoryExtractor"""
@@ -153,7 +146,7 @@ class TestExtractorModule(unittest.TestCase):
                     capitalize(extr.subcategory),
                 )
                 if expected[0].isdigit():
-                    expected = "_" + expected
+                    expected = f"_{expected}"
                 self.assertEqual(expected, extr.__name__)
 
 
@@ -225,44 +218,33 @@ class TextExtractorOAuth(unittest.TestCase):
 
     def test_oauth1(self):
         for category in ("flickr", "smugmug", "tumblr"):
-            extr = extractor.find("oauth:" + category)
+            extr = extractor.find(f"oauth:{category}")
 
             with patch.object(extr, "_oauth1_authorization_flow") as m:
-                for msg in extr:
-                    pass
                 self.assertEqual(len(m.mock_calls), 1)
 
     def test_oauth2(self):
         for category in ("deviantart", "reddit"):
-            extr = extractor.find("oauth:" + category)
+            extr = extractor.find(f"oauth:{category}")
 
             with patch.object(extr, "_oauth2_authorization_code_grant") as m:
-                for msg in extr:
-                    pass
                 self.assertEqual(len(m.mock_calls), 1)
 
     def test_oauth2_mastodon(self):
         extr = extractor.find("oauth:mastodon:pawoo.net")
 
-        with patch.object(extr, "_oauth2_authorization_code_grant") as m, \
-                patch.object(extr, "_register") as r:
-            for msg in extr:
-                pass
+        with (patch.object(extr, "_oauth2_authorization_code_grant") as m, patch.object(extr, "_register") as r):
             self.assertEqual(len(r.mock_calls), 0)
             self.assertEqual(len(m.mock_calls), 1)
 
     def test_oauth2_mastodon_unknown(self):
         extr = extractor.find("oauth:mastodon:example.com")
 
-        with patch.object(extr, "_oauth2_authorization_code_grant") as m, \
-                patch.object(extr, "_register") as r:
+        with (patch.object(extr, "_oauth2_authorization_code_grant") as m, patch.object(extr, "_register") as r):
             r.return_value = {
                 "client-id"    : "foo",
                 "client-secret": "bar",
             }
-
-            for msg in extr:
-                pass
 
             self.assertEqual(len(r.mock_calls), 1)
             self.assertEqual(len(m.mock_calls), 1)

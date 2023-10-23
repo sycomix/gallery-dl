@@ -32,8 +32,7 @@ class FuraffinityExtractor(Extractor):
     def items(self):
         metadata = self.metadata()
         for post_id in util.advance(self.posts(), self.offset):
-            post = self._parse_post(post_id)
-            if post:
+            if post := self._parse_post(post_id):
                 if metadata:
                     post.update(metadata)
                 yield Message.Directory, post
@@ -50,7 +49,7 @@ class FuraffinityExtractor(Extractor):
         return num
 
     def _parse_post(self, post_id):
-        url = "{}/view/{}/".format(self.root, post_id)
+        url = f"{self.root}/view/{post_id}/"
         extr = text.extract_from(self.request(url).text)
         title, _, artist = text.unescape(extr(
             'property="og:title" content="', '"')).rpartition(" by ")
@@ -70,17 +69,19 @@ class FuraffinityExtractor(Extractor):
         pi = text.parse_int
         rh = text.remove_html
 
-        data = text.nameext_from_url(path, {
-            "id"        : pi(post_id),
-            "title"     : title,
-            "artist"    : artist,
-            "artist_url": artist_url,
-            "user"      : self.user or artist_url,
-            "url"       : "https://d" + path
-        })
+        data = text.nameext_from_url(
+            path,
+            {
+                "id": pi(post_id),
+                "title": title,
+                "artist": artist,
+                "artist_url": artist_url,
+                "user": self.user or artist_url,
+                "url": f"https://d{path}",
+            },
+        )
 
-        tags = extr('class="tags-row">', '</section>')
-        if tags:
+        if tags := extr('class="tags-row">', '</section>'):
             # new site layout
             data["tags"] = text.split_html(tags)
             data["description"] = text.unescape(rh(extr(
@@ -118,21 +119,18 @@ class FuraffinityExtractor(Extractor):
     def _pagination(self):
         num = 1
 
+        post_id = None
+
         while True:
-            url = "{}/{}/{}/{}/".format(
-                self.root, self.subcategory, self.user, num)
+            url = f"{self.root}/{self.subcategory}/{self.user}/{num}/"
             page = self.request(url).text
-            post_id = None
-
-            for post_id in text.extract_iter(page, 'id="sid-', '"'):
-                yield post_id
-
+            yield from text.extract_iter(page, 'id="sid-', '"')
             if not post_id:
                 return
             num += 1
 
     def _pagination_favorites(self):
-        path = "/favorites/{}/".format(self.user)
+        path = f"/favorites/{self.user}/"
 
         while path:
             page = self.request(self.root + path).text
@@ -140,7 +138,7 @@ class FuraffinityExtractor(Extractor):
             path = text.extract(page, 'right" href="', '"')[0]
 
     def _pagination_search(self, query):
-        url = self.root + "/search/"
+        url = f"{self.root}/search/"
         data = {
             "page"           : 0,
             "next_page"      : "Next",
@@ -166,9 +164,7 @@ class FuraffinityExtractor(Extractor):
             page = self.request(url, method="POST", data=data).text
             post_id = None
 
-            for post_id in text.extract_iter(page, 'id="sid-', '"'):
-                yield post_id
-
+            yield from text.extract_iter(page, 'id="sid-', '"')
             if not post_id:
                 return
             data["page"] += 1
@@ -177,7 +173,7 @@ class FuraffinityExtractor(Extractor):
 class FuraffinityGalleryExtractor(FuraffinityExtractor):
     """Extractor for a furaffinity user's gallery"""
     subcategory = "gallery"
-    pattern = BASE_PATTERN + r"/gallery/([^/?#]+)"
+    pattern = f"{BASE_PATTERN}/gallery/([^/?#]+)"
     test = ("https://www.furaffinity.net/gallery/mirlinthloth/", {
         "pattern": r"https://d\d?.facdn.net/art/mirlinthloth/\d+/\d+.\w+\.\w+",
         "range": "45-50",
@@ -185,11 +181,14 @@ class FuraffinityGalleryExtractor(FuraffinityExtractor):
     })
 
 
+
+
+
 class FuraffinityScrapsExtractor(FuraffinityExtractor):
     """Extractor for a furaffinity user's scraps"""
     subcategory = "scraps"
     directory_fmt = ("{category}", "{user!l}", "Scraps")
-    pattern = BASE_PATTERN + r"/scraps/([^/?#]+)"
+    pattern = f"{BASE_PATTERN}/scraps/([^/?#]+)"
     test = ("https://www.furaffinity.net/scraps/mirlinthloth/", {
         "pattern": r"https://d\d?.facdn.net/art/[^/]+(/stories)?/\d+/\d+.\w+.",
         "count": ">= 3",
@@ -310,7 +309,7 @@ class FuraffinityFollowingExtractor(FuraffinityExtractor):
     })
 
     def items(self):
-        url = "{}/watchlist/by/{}/".format(self.root, self.user)
+        url = f"{self.root}/watchlist/by/{self.user}/"
         data = {"_extractor": FuraffinityUserExtractor}
 
         while True:

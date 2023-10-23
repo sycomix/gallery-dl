@@ -29,11 +29,10 @@ class NozomiExtractor(Extractor):
 
         data = self.metadata()
         self.session.headers["Origin"] = self.root
-        self.session.headers["Referer"] = self.root + "/"
+        self.session.headers["Referer"] = f"{self.root}/"
 
         for post_id in map(str, self.posts()):
-            url = "https://j.nozomi.la/post/{}/{}/{}.json".format(
-                post_id[-1], post_id[-3:-1], post_id)
+            url = f"https://j.nozomi.la/post/{post_id[-1]}/{post_id[-3:-1]}/{post_id}.json"
             response = self.request(url, fatal=False)
 
             if response.status_code >= 400:
@@ -148,11 +147,11 @@ class NozomiTagExtractor(NozomiExtractor):
         return {"search_tags": self.tags}
 
     def posts(self):
-        url = "https://n.nozomi.la/nozomi/{}.nozomi".format(self.tags)
+        url = f"https://n.nozomi.la/nozomi/{self.tags}.nozomi"
         i = 0
 
         while True:
-            headers = {"Range": "bytes={}-{}".format(i, i+255)}
+            headers = {"Range": f"bytes={i}-{i + 255}"}
             response = self.request(url, headers=headers)
             yield from decode_nozomi(response.content)
 
@@ -184,16 +183,16 @@ class NozomiSearchExtractor(NozomiExtractor):
         result = set()
 
         def nozomi(path):
-            url = "https://j.nozomi.la/" + path + ".nozomi"
+            url = f"https://j.nozomi.la/{path}.nozomi"
             return decode_nozomi(self.request(url).content)
 
         for tag in self.tags:
             if tag[0] == "-":
                 if not index:
                     index = set(nozomi("index"))
-                items = index.difference(nozomi("nozomi/" + tag[1:]))
+                items = index.difference(nozomi(f"nozomi/{tag[1:]}"))
             else:
-                items = nozomi("nozomi/" + tag)
+                items = nozomi(f"nozomi/{tag}")
 
             if result:
                 result.intersection_update(items)

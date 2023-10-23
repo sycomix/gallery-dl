@@ -25,7 +25,7 @@ class PixnetExtractor(Extractor):
     def __init__(self, match):
         Extractor.__init__(self, match)
         self.blog, self.item_id = match.groups()
-        self.root = "https://{}.pixnet.net".format(self.blog)
+        self.root = f"https://{self.blog}.pixnet.net"
 
     def items(self):
         url = self.url_fmt.format(self.root, self.item_id)
@@ -77,8 +77,7 @@ class PixnetImageExtractor(PixnetExtractor):
     def items(self):
         url = "https://api.pixnet.cc/oembed"
         params = {
-            "url": "https://{}.pixnet.net/album/photo/{}".format(
-                self.blog, self.item_id),
+            "url": f"https://{self.blog}.pixnet.net/album/photo/{self.item_id}",
             "format": "json",
         }
 
@@ -165,11 +164,13 @@ class PixnetFolderExtractor(PixnetExtractor):
     })
 
 
+
+
 class PixnetUserExtractor(PixnetExtractor):
     """Extractor for all sets and folders of a pixnet user"""
     subcategory = "user"
     url_fmt = "{}{}/album/list"
-    pattern = BASE_PATTERN + r"()(?:/blog|/album(?:/list)?)?/?(?:$|[?#])"
+    pattern = f"{BASE_PATTERN}()(?:/blog|/album(?:/list)?)?/?(?:$|[?#])"
     test = (
         ("https://albertayu773.pixnet.net/"),
         ("https://albertayu773.pixnet.net/blog"),

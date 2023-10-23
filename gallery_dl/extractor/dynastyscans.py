@@ -23,7 +23,7 @@ class DynastyscansBase():
     root = "https://dynasty-scans.com"
 
     def _parse_image_page(self, image_id):
-        url = "{}/images/{}".format(self.root, image_id)
+        url = f"{self.root}/images/{image_id}"
         extr = text.extract_from(self.request(url).text)
 
         date = extr("class='create_at'>", "</span>")
@@ -121,7 +121,7 @@ class DynastyscansSearchExtractor(DynastyscansBase, Extractor):
             yield Message.Url, url, text.nameext_from_url(url, image)
 
     def images(self):
-        url = self.root + "/images?" + self.query.replace("[]", "%5B%5D")
+        url = f"{self.root}/images?" + self.query.replace("[]", "%5B%5D")
         params = {"page": 1}
 
         while True:

@@ -35,7 +35,7 @@ class ComparePP(PostProcessor):
         num = 1
         try:
             while not self._compare(pathfmt.realpath, pathfmt.temppath):
-                pathfmt.prefix = str(num) + "."
+                pathfmt.prefix = f"{str(num)}."
                 pathfmt.set_extension(pathfmt.extension, False)
                 num += 1
             pathfmt.delete = True

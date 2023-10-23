@@ -80,16 +80,16 @@ class UgoiraPP(PostProcessor):
                 zfile.extractall(tempdir)
 
             # write ffconcat file
-            ffconcat = tempdir + "/ffconcat.txt"
+            ffconcat = f"{tempdir}/ffconcat.txt"
             with open(ffconcat, "w") as file:
                 file.write("ffconcat version 1.0\n")
                 for frame in self._frames:
-                    file.write("file '{}'\n".format(frame["file"]))
-                    file.write("duration {}\n".format(frame["delay"] / 1000))
+                    file.write(f"""file '{frame["file"]}'\n""")
+                    file.write(f'duration {frame["delay"] / 1000}\n')
                 if self.extension != "gif":
                     # repeat the last frame to prevent it from only being
                     # displayed for a very short amount of time
-                    file.write("file '{}'\n".format(self._frames[-1]["file"]))
+                    file.write(f"""file '{self._frames[-1]["file"]}'\n""")
 
             # collect command-line arguments
             args = [self.ffmpeg]
@@ -110,7 +110,7 @@ class UgoiraPP(PostProcessor):
                 if self.twopass:
                     if "-f" not in args:
                         args += ("-f", self.extension)
-                    args += ("-passlogfile", tempdir + "/ffmpeg2pass", "-pass")
+                    args += ("-passlogfile", f"{tempdir}/ffmpeg2pass", "-pass")
                     self._exec(args + ["1", "-y", os.devnull])
                     self._exec(args + ["2", pathfmt.realpath])
                 else:
@@ -134,7 +134,7 @@ class UgoiraPP(PostProcessor):
     @staticmethod
     def calculate_framerate(framelist):
         counter = collections.Counter(frame["delay"] for frame in framelist)
-        fps = "1000/{}".format(min(counter))
+        fps = f"1000/{min(counter)}"
         return (fps, None) if len(counter) == 1 else (None, fps)
 
 

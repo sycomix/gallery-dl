@@ -25,7 +25,7 @@ class HiperdexBase():
     @memcache(keyarg=1)
     def manga_data(self, manga, page=None):
         if not page:
-            url = "{}/manga/{}/".format(self.root, manga)
+            url = f"{self.root}/manga/{manga}/"
             page = self.request(url).text
         extr = text.extract_from(page)
 
@@ -55,8 +55,8 @@ class HiperdexBase():
     def chapter_data(self, chapter):
         chapter, _, minor = chapter.partition("-")
         data = {
-            "chapter"      : text.parse_int(chapter),
-            "chapter_minor": "." + minor if minor and minor != "end" else "",
+            "chapter": text.parse_int(chapter),
+            "chapter_minor": f".{minor}" if minor and minor != "end" else "",
         }
         data.update(self.manga_data(self.manga.lower()))
         return data
@@ -141,7 +141,7 @@ class HiperdexMangaExtractor(HiperdexBase, MangaExtractor):
             "action": "manga_get_chapters",
             "manga" : shortlink.rpartition("=")[2],
         }
-        url = self.root + "/wp-admin/admin-ajax.php"
+        url = f"{self.root}/wp-admin/admin-ajax.php"
         page = self.request(url, method="POST", data=data).text
 
         for url in text.extract_iter(page, 'href="', '"', 320):

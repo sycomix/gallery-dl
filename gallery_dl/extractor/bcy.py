@@ -92,7 +92,7 @@ class BcyExtractor(Extractor):
         """Returns an iterable with all relevant 'post' objects"""
 
     def _data_from_post(self, post_id):
-        url = "{}/item/detail/{}".format(self.root, post_id)
+        url = f"{self.root}/item/detail/{post_id}"
         page = self.request(url).text
         return json.loads(
             text.extract(page, 'JSON.parse("', '");')[0]
@@ -119,7 +119,7 @@ class BcyUserExtractor(BcyExtractor):
     )
 
     def posts(self):
-        url = self.root + "/apiv3/user/selfPosts"
+        url = f"{self.root}/apiv3/user/selfPosts"
         params = {"uid": self.item_id, "since": None}
 
         while True:

@@ -38,8 +38,7 @@ class MastodonExtractor(Extractor):
     def items(self):
         yield Message.Version, 1
         for status in self.statuses():
-            attachments = status["media_attachments"]
-            if attachments:
+            if attachments := status["media_attachments"]:
                 self.prepare(status)
                 yield Message.Directory, status
                 for media in attachments:
@@ -69,7 +68,7 @@ class MastodonUserExtractor(MastodonExtractor):
         self.account_name = match.group(1)
 
     def statuses(self):
-        handle = "@{}@{}".format(self.account_name, self.instance)
+        handle = f"@{self.account_name}@{self.instance}"
         for account in self.api.account_search(handle, 1):
             if account["username"] == self.account_name:
                 break
@@ -104,7 +103,7 @@ class MastodonAPI():
         if not access_token:
             access_token = extractor.config(
                 "access-token", extractor.access_token)
-        self.headers = {"Authorization": "Bearer {}".format(access_token)}
+        self.headers = {"Authorization": f"Bearer {access_token}"}
 
     def account_search(self, query, limit=40):
         """Search for content"""
@@ -113,19 +112,19 @@ class MastodonAPI():
 
     def account_statuses(self, account_id):
         """Get an account's statuses"""
-        endpoint = "accounts/{}/statuses".format(account_id)
+        endpoint = f"accounts/{account_id}/statuses"
         params = {"only_media": "1"}
         return self._pagination(endpoint, params)
 
     def status(self, status_id):
         """Fetch a Status"""
-        return self._call("statuses/" + status_id).json()
+        return self._call(f"statuses/{status_id}").json()
 
     def _call(self, endpoint, params=None):
         if endpoint.startswith("http"):
             url = endpoint
         else:
-            url = "{}/api/v1/{}".format(self.root, endpoint)
+            url = f"{self.root}/api/v1/{endpoint}"
 
         while True:
             response = self.extractor.request(
@@ -145,7 +144,7 @@ class MastodonAPI():
             raise exception.StopExtraction(response.json().get("error"))
 
     def _pagination(self, endpoint, params):
-        url = "{}/api/v1/{}".format(self.root, endpoint)
+        url = f"{self.root}/api/v1/{endpoint}"
         while url:
             response = self._call(url, params)
             yield from response.json()
@@ -160,8 +159,7 @@ def generate_extractors():
     """Dynamically generate Extractor classes for Mastodon instances"""
 
     symtable = globals()
-    extractors = config.get(("extractor",), "mastodon")
-    if extractors:
+    if extractors := config.get(("extractor",), "mastodon"):
         util.combine_dict(EXTRACTORS, extractors)
     config.set(("extractor",), "mastodon", EXTRACTORS)
 
@@ -171,7 +169,7 @@ def generate_extractors():
             continue
 
         category = info.get("category") or instance.replace(".", "")
-        root = info.get("root") or "https://" + instance
+        root = info.get("root") or f"https://{instance}"
         name = (info.get("name") or category).capitalize()
         token = info.get("access-token")
         pattern = info.get("pattern") or re.escape(instance)
@@ -179,12 +177,11 @@ def generate_extractors():
         class Extr(MastodonUserExtractor):
             pass
 
-        Extr.__name__ = Extr.__qualname__ = name + "UserExtractor"
-        Extr.__doc__ = "Extractor for all images of a user on " + instance
+        Extr.__name__ = Extr.__qualname__ = f"{name}UserExtractor"
+        Extr.__doc__ = f"Extractor for all images of a user on {instance}"
         Extr.category = category
         Extr.instance = instance
-        Extr.pattern = (r"(?:https?://)?" + pattern +
-                        r"/@([^/?#]+)(?:/media)?/?$")
+        Extr.pattern = f"(?:https?://)?{pattern}/@([^/?#]+)(?:/media)?/?$"
         Extr.test = info.get("test-user")
         Extr.root = root
         Extr.access_token = token
@@ -193,11 +190,11 @@ def generate_extractors():
         class Extr(MastodonStatusExtractor):
             pass
 
-        Extr.__name__ = Extr.__qualname__ = name + "StatusExtractor"
-        Extr.__doc__ = "Extractor for images from a status on " + instance
+        Extr.__name__ = Extr.__qualname__ = f"{name}StatusExtractor"
+        Extr.__doc__ = f"Extractor for images from a status on {instance}"
         Extr.category = category
         Extr.instance = instance
-        Extr.pattern = r"(?:https?://)?" + pattern + r"/@[^/?#]+/(\d+)"
+        Extr.pattern = f"(?:https?://)?{pattern}" + r"/@[^/?#]+/(\d+)"
         Extr.test = info.get("test-status")
         Extr.root = root
         Extr.access_token = token

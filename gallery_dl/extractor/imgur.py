@@ -35,8 +35,7 @@ class ImgurExtractor(Extractor):
         elif image["is_animated"] and self.mp4 and image["ext"] == "gif":
             image["ext"] = "mp4"
 
-        image["url"] = url = "https://i.imgur.com/{}.{}".format(
-            image["id"], image["ext"])
+        image["url"] = url = f'https://i.imgur.com/{image["id"]}.{image["ext"]}'
         image["date"] = text.parse_datetime(image["created_at"])
         text.nameext_from_url(url, image)
 
@@ -248,10 +247,10 @@ class ImgurGalleryExtractor(ImgurExtractor):
 
     def items(self):
         if self.api.gallery(self.key)["is_album"]:
-            url = "{}/a/{}".format(self.root, self.key)
+            url = f"{self.root}/a/{self.key}"
             extr = ImgurAlbumExtractor
         else:
-            url = "{}/{}".format(self.root, self.key)
+            url = f"{self.root}/{self.key}"
             extr = ImgurImageExtractor
         yield Message.Queue, url, {"_extractor": extr}
 
@@ -344,7 +343,7 @@ class ImgurAPI():
         }
 
     def account_favorites(self, account):
-        endpoint = "/3/account/{}/gallery_favorites".format(account)
+        endpoint = f"/3/account/{account}/gallery_favorites"
         return self._pagination(endpoint)
 
     def gallery_search(self, query):
@@ -353,36 +352,37 @@ class ImgurAPI():
         return self._pagination(endpoint, params)
 
     def account_submissions(self, account):
-        endpoint = "/3/account/{}/submissions".format(account)
+        endpoint = f"/3/account/{account}/submissions"
         return self._pagination(endpoint)
 
     def gallery_subreddit(self, subreddit):
-        endpoint = "/3/gallery/r/{}".format(subreddit)
+        endpoint = f"/3/gallery/r/{subreddit}"
         return self._pagination(endpoint)
 
     def gallery_tag(self, tag):
-        endpoint = "/3/gallery/t/{}".format(tag)
+        endpoint = f"/3/gallery/t/{tag}"
         return self._pagination(endpoint, key="items")
 
     def image(self, image_hash):
-        endpoint = "/post/v1/media/" + image_hash
+        endpoint = f"/post/v1/media/{image_hash}"
         params = {"include": "media,tags,account"}
         return self._call(endpoint, params)
 
     def album(self, album_hash):
-        endpoint = "/post/v1/albums/" + album_hash
+        endpoint = f"/post/v1/albums/{album_hash}"
         params = {"include": "media,tags,account"}
         return self._call(endpoint, params)
 
     def gallery(self, gallery_hash):
-        endpoint = "/post/v1/posts/" + gallery_hash
+        endpoint = f"/post/v1/posts/{gallery_hash}"
         return self._call(endpoint)
 
     def _call(self, endpoint, params=None):
         try:
             return self.extractor.request(
-                "https://api.imgur.com" + endpoint,
-                params=params, headers=self.headers,
+                f"https://api.imgur.com{endpoint}",
+                params=params,
+                headers=self.headers,
             ).json()
         except exception.HttpError as exc:
             if exc.status != 403 or b"capacity" not in exc.response.content:
@@ -394,7 +394,7 @@ class ImgurAPI():
         num = 0
 
         while True:
-            data = self._call("{}/{}".format(endpoint, num), params)["data"]
+            data = self._call(f"{endpoint}/{num}", params)["data"]
             if key:
                 data = data[key]
             if not data:

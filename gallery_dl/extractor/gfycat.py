@@ -39,11 +39,11 @@ class GfycatExtractor(Extractor):
 
     def _select_format(self, gfyitem):
         for fmt in self.formats:
-            key = fmt + "Url"
+            key = f"{fmt}Url"
             if key in gfyitem:
                 url = gfyitem[key]
                 if url.startswith("http:"):
-                    url = "https" + url[4:]
+                    url = f"https{url[4:]}"
                 gfyitem["extension"] = url.rpartition(".")[2]
                 return url
         gfyitem["extension"] = ""
@@ -140,7 +140,7 @@ class GfycatImageExtractor(GfycatExtractor):
             gfycat = GfycatAPI(self).gfycat(self.key)
         except exception.HttpError:
             from .redgifs import RedgifsImageExtractor
-            url = "https://redgifs.com/watch/" + self.key
+            url = f"https://redgifs.com/watch/{self.key}"
             data = {"_extractor": RedgifsImageExtractor}
             yield Message.Queue, url, data
         else:
@@ -162,11 +162,11 @@ class GfycatAPI():
         self.headers = {}
 
     def gfycat(self, gfycat_id):
-        endpoint = "/v1/gfycats/" + gfycat_id
+        endpoint = f"/v1/gfycats/{gfycat_id}"
         return self._call(endpoint)["gfyItem"]
 
     def user(self, user):
-        endpoint = "/v1/users/{}/gfycats".format(user.lower())
+        endpoint = f"/v1/users/{user.lower()}/gfycats"
         params = {"count": 100}
         return self._pagination(endpoint, params)
 
@@ -177,10 +177,9 @@ class GfycatAPI():
 
     @cache(keyarg=1, maxage=3600)
     def _authenticate_impl(self, category):
-        url = "https://weblogin." + category + ".com/oauth/webtoken"
+        url = f"https://weblogin.{category}.com/oauth/webtoken"
         data = {"access_key": self.ACCESS_KEY}
-        headers = {"Referer": self.extractor.root + "/",
-                   "Origin" : self.extractor.root}
+        headers = {"Referer": f"{self.extractor.root}/", "Origin": self.extractor.root}
         response = self.extractor.request(
             url, method="POST", headers=headers, json=data)
         return "Bearer " + response.json()["access_token"]

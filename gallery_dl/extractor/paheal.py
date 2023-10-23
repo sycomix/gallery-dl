@@ -64,7 +64,7 @@ class PahealTagExtractor(PahealExtractor):
     def get_posts(self):
         pnum = 1
         while True:
-            url = "{}/post/list/{}/{}".format(self.root, self.tags, pnum)
+            url = f"{self.root}/post/list/{self.tags}/{pnum}"
             page = self.request(url).text
 
             for post in text.extract_iter(
@@ -109,7 +109,7 @@ class PahealPostExtractor(PahealExtractor):
         self.post_id = match.group(1)
 
     def get_posts(self):
-        url = "{}/post/view/{}".format(self.root, self.post_id)
+        url = f"{self.root}/post/view/{self.post_id}"
         page = self.request(url).text
 
         tags  , pos = text.extract(page, ": ", "<")

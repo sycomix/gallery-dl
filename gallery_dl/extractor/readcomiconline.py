@@ -27,18 +27,17 @@ class ReadcomiconlineBase():
             response = Extractor.request(self, url, **kwargs)
             if not response.history or "/AreYouHuman" not in response.url:
                 return response
-            if self.config("captcha", "stop") == "wait":
-                self.log.warning(
-                    "Redirect to \n%s\nVisit this URL in your browser, solve "
-                    "the CAPTCHA, and press ENTER to continue", response.url)
-                try:
-                    input()
-                except (EOFError, OSError):
-                    pass
-            else:
+            if self.config("captcha", "stop") != "wait":
                 raise exception.StopExtraction(
                     "Redirect to \n%s\nVisit this URL in your browser and "
                     "solve the CAPTCHA to continue", response.url)
+            self.log.warning(
+                "Redirect to \n%s\nVisit this URL in your browser, solve "
+                "the CAPTCHA, and press ENTER to continue", response.url)
+            try:
+                input()
+            except (EOFError, OSError):
+                pass
 
 
 class ReadcomiconlineIssueExtractor(ReadcomiconlineBase, ChapterExtractor):
@@ -99,7 +98,7 @@ class ReadcomiconlineComicExtractor(ReadcomiconlineBase, MangaExtractor):
         page , pos = text.extract(page, ' class="listing">', '</table>', pos)
 
         comic = comic.rpartition("information")[0].strip()
-        needle = ' title="Read {} '.format(comic)
+        needle = f' title="Read {comic} '
         comic = text.unescape(comic)
 
         for item in text.extract_iter(page, ' href="', ' comic online '):

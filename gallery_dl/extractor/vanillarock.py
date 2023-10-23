@@ -41,11 +41,11 @@ class VanillarockPostExtractor(VanillarockExtractor):
 
         imgs = []
         while True:
-            img = extr('<div class="main-img">', '</div>')
-            if not img:
-                break
-            imgs.append(text.extract(img, 'href="', '"')[0])
+            if img := extr('<div class="main-img">', '</div>'):
+                imgs.append(text.extract(img, 'href="', '"')[0])
 
+            else:
+                break
         data = {
             "count": len(imgs),
             "title": text.unescape(name.rpartition(" | ")[0]),
@@ -88,8 +88,8 @@ class VanillarockTagExtractor(VanillarockExtractor):
         while url:
             extr = text.extract_from(self.request(url).text)
             while True:
-                post = extr('<h2 class="entry-title">', '</h2>')
-                if not post:
+                if post := extr('<h2 class="entry-title">', '</h2>'):
+                    yield Message.Queue, text.extract(post, 'href="', '"')[0], data
+                else:
                     break
-                yield Message.Queue, text.extract(post, 'href="', '"')[0], data
             url = text.unescape(extr('class="next page-numbers" href="', '"'))

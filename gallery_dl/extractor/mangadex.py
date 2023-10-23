@@ -28,18 +28,18 @@ class MangadexExtractor(Extractor):
 
     def chapter_data(self, chapter_id):
         """Request API results for 'chapter_id'"""
-        url = "{}/api/v2/chapter/{}".format(self.root, chapter_id)
+        url = f"{self.root}/api/v2/chapter/{chapter_id}"
         return self.request(url).json()["data"]
 
     @memcache(keyarg=1)
     def manga_data(self, manga_id):
         """Request API results for 'manga_id'"""
-        url = "{}/api/v2/manga/{}".format(self.root, manga_id)
+        url = f"{self.root}/api/v2/manga/{manga_id}"
         return self.request(url).json()["data"]
 
     def manga_chapters(self, manga_id):
         """Request chapter list for 'manga_id'"""
-        url = "{}/api/v2/manga/{}/chapters".format(self.root, manga_id)
+        url = f"{self.root}/api/v2/manga/{manga_id}/chapters"
         data = self.request(url).json()["data"]
 
         groups = {
@@ -168,7 +168,7 @@ class MangadexMangaExtractor(MangadexExtractor):
     def items(self):
         yield Message.Version, 1
         for data in self.chapters():
-            url = "{}/chapter/{}".format(self.root, data["chapter_id"])
+            url = f'{self.root}/chapter/{data["chapter_id"]}'
             yield Message.Queue, url, data
 
     def chapters(self):

@@ -27,14 +27,12 @@ class ReactorExtractor(Extractor):
 
     def __init__(self, match):
         Extractor.__init__(self, match)
-        self.root = "http://" + match.group(1)
+        self.root = f"http://{match.group(1)}"
         self.session.headers["Referer"] = self.root
 
         self.wait_min = self.config("wait-min", 3)
         self.wait_max = self.config("wait-max", 6)
-        if self.wait_max < self.wait_min:
-            self.wait_max = self.wait_min
-
+        self.wait_max = max(self.wait_max, self.wait_min)
         if not self.category:
             # set category based on domain name
             netloc = urllib.parse.urlsplit(self.root).netloc
@@ -119,14 +117,14 @@ class ReactorExtractor(Extractor):
             if not url:
                 continue
             if url.startswith("//"):
-                url = "http:" + url
+                url = f"http:{url}"
             width = text.extract(image, ' width="', '"')[0]
             height = text.extract(image, ' height="', '"')[0]
             image_id = url.rpartition("-")[2].partition(".")[0]
             num += 1
 
             if image.startswith("<iframe "):  # embed
-                url = "ytdl:" + text.unescape(url)
+                url = f"ytdl:{text.unescape(url)}"
             elif "/post/webm/" not in url and "/post/mp4/" not in url:
                 url = url.replace("/post/", "/post/full/")
 
@@ -212,10 +210,12 @@ class ReactorPostExtractor(ReactorExtractor):
 JR_BASE_PATTERN = r"(?:https?://)?(?:www\.)?(joyreactor\.c(?:c|om))"
 
 
+
+
 class JoyreactorTagExtractor(ReactorTagExtractor):
     """Extractor for tag searches on joyreactor.cc"""
     category = "joyreactor"
-    pattern = JR_BASE_PATTERN + r"/tag/([^/?#]+)"
+    pattern = f"{JR_BASE_PATTERN}/tag/([^/?#]+)"
     test = (
         ("http://joyreactor.cc/tag/Advent+Cirno", {
             "count": ">= 17",
@@ -224,6 +224,7 @@ class JoyreactorTagExtractor(ReactorTagExtractor):
             "url": "de1e60c15bfb07a0e9603b00dc3d05f60edc7914",
         }),
     )
+
 
 
 class JoyreactorSearchExtractor(ReactorSearchExtractor):
@@ -242,16 +243,19 @@ class JoyreactorSearchExtractor(ReactorSearchExtractor):
     )
 
 
+
+
 class JoyreactorUserExtractor(ReactorUserExtractor):
     """Extractor for all posts of a user on joyreactor.cc"""
     category = "joyreactor"
-    pattern = JR_BASE_PATTERN + r"/user/([^/?#]+)"
+    pattern = f"{JR_BASE_PATTERN}/user/([^/?#]+)"
     test = (
         ("http://joyreactor.cc/user/hemantic"),
         ("http://joyreactor.com/user/Tacoman123", {
             "url": "452cd0fa23e2ad0e122c296ba75aa7f0b29329f6",
         }),
     )
+
 
 
 class JoyreactorPostExtractor(ReactorPostExtractor):
@@ -287,10 +291,12 @@ class JoyreactorPostExtractor(ReactorPostExtractor):
 PR_BASE_PATTERN = r"(?:https?://)?(?:www\.)?(pornreactor\.cc|fapreactor.com)"
 
 
+
+
 class PornreactorTagExtractor(ReactorTagExtractor):
     """Extractor for tag searches on pornreactor.cc"""
     category = "pornreactor"
-    pattern = PR_BASE_PATTERN + r"/tag/([^/?#]+)"
+    pattern = f"{PR_BASE_PATTERN}/tag/([^/?#]+)"
     test = (
         ("http://pornreactor.cc/tag/RiceGnat", {
             "range": "1-25",
@@ -298,6 +304,7 @@ class PornreactorTagExtractor(ReactorTagExtractor):
         }),
         ("http://fapreactor.com/tag/RiceGnat"),
     )
+
 
 
 class PornreactorSearchExtractor(ReactorSearchExtractor):
@@ -313,10 +320,12 @@ class PornreactorSearchExtractor(ReactorSearchExtractor):
     )
 
 
+
+
 class PornreactorUserExtractor(ReactorUserExtractor):
     """Extractor for all posts of a user on pornreactor.cc"""
     category = "pornreactor"
-    pattern = PR_BASE_PATTERN + r"/user/([^/?#]+)"
+    pattern = f"{PR_BASE_PATTERN}/user/([^/?#]+)"
     test = (
         ("http://pornreactor.cc/user/Disillusion", {
             "range": "1-25",
@@ -324,6 +333,7 @@ class PornreactorUserExtractor(ReactorUserExtractor):
         }),
         ("http://fapreactor.com/user/Disillusion"),
     )
+
 
 
 class PornreactorPostExtractor(ReactorPostExtractor):

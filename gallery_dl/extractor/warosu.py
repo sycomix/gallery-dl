@@ -38,7 +38,7 @@ class WarosuThreadExtractor(Extractor):
         self.board, self.thread = match.groups()
 
     def items(self):
-        url = "{}/{}/thread/{}".format(self.root, self.board, self.thread)
+        url = f"{self.root}/{self.board}/thread/{self.thread}"
         page = self.request(url).text
         data = self.get_metadata(page)
         posts = self.posts(page)

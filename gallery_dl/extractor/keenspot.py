@@ -47,7 +47,7 @@ class KeenspotComicExtractor(Extractor):
         Extractor.__init__(self, match)
         self.comic = match.group(1).lower()
         self.path = match.group(2)
-        self.root = "http://" + self.comic + ".keenspot.com"
+        self.root = f"http://{self.comic}.keenspot.com"
 
         self._needle = ""
         self._image = 'class="ksc"'
@@ -58,7 +58,7 @@ class KeenspotComicExtractor(Extractor):
         yield Message.Version, 1
         yield Message.Directory, data
 
-        with self.request(self.root + "/") as response:
+        with self.request(f"{self.root}/") as response:
             if response.history:
                 url = response.request.url
                 self.root = url[:url.index("/", 8)]
@@ -86,7 +86,7 @@ class KeenspotComicExtractor(Extractor):
                 if img[0] == "/":
                     img = self.root + img
                 elif "youtube.com/" in img:
-                    img = "ytdl:" + img
+                    img = f"ytdl:{img}"
                 yield Message.Url, img, text.nameext_from_url(img, data)
 
             url = self._next(page)
@@ -97,8 +97,7 @@ class KeenspotComicExtractor(Extractor):
             self._image = '<div id="comic">'
             return "http://brawlinthefamily.keenspot.com/comic/theshowdown/"
 
-        url = text.extract(page, '<link rel="first" href="', '"')[0]
-        if url:
+        if url := text.extract(page, '<link rel="first" href="', '"')[0]:
             if self.comic == "porcelain":
                 self._needle = 'id="porArchivetop_"'
             else:

@@ -35,8 +35,7 @@ class MetadataPP(PostProcessor):
             self.ascii = options.get("ascii", False)
             ext = "json"
 
-        directory = options.get("directory")
-        if directory:
+        if directory := options.get("directory"):
             self._directory = self._directory_custom
             sep = os.sep + (os.altsep or "")
             self._metadir = directory.rstrip(sep) + os.sep

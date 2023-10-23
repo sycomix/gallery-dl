@@ -27,7 +27,7 @@ class ImagechestGalleryExtractor(GalleryExtractor):
 
     def __init__(self, match):
         self.gallery_id = match.group(1)
-        url = self.root + "/p/" + self.gallery_id
+        url = f"{self.root}/p/{self.gallery_id}"
         GalleryExtractor.__init__(self, match, url)
 
     def metadata(self, page):

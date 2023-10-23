@@ -65,7 +65,7 @@ class OAuthBase(Extractor):
     def open(self, url, params):
         """Open 'url' in browser amd return response parameters"""
         import webbrowser
-        url += "?" + urllib.parse.urlencode(params)
+        url += f"?{urllib.parse.urlencode(params)}"
         if not self.config("browser", True) or not webbrowser.open(url):
             print("Please open this URL in your browser:")
             print(url, end="\n\n", flush=True)
@@ -109,10 +109,7 @@ class OAuthBase(Extractor):
             message_template=None, cache=None):
         """Perform an OAuth2 authorization code grant"""
 
-        state = "gallery-dl_{}_{}".format(
-            self.subcategory,
-            oauth.nonce(8),
-        )
+        state = f"gallery-dl_{self.subcategory}_{oauth.nonce(8)}"
 
         auth_params = {
             "client_id": client_id,
@@ -128,9 +125,9 @@ class OAuthBase(Extractor):
 
         # check authorization response
         if state != params.get("state"):
-            self.send("'state' mismatch: expected {}, got {}.".format(
-                state, params.get("state")
-            ))
+            self.send(
+                f"""'state' mismatch: expected {state}, got {params.get("state")}."""
+            )
             return
         if "error" in params:
             self.send(params["error"])
@@ -159,7 +156,7 @@ class OAuthBase(Extractor):
 
         # write to cache
         if self.cache and cache:
-            cache.update("#" + str(client_id), data[key])
+            cache.update(f"#{str(client_id)}", data[key])
             self.log.info("Writing 'refresh-token' to cache")
 
         # display token
@@ -187,26 +184,18 @@ class OAuthBase(Extractor):
         )
 
         msg = "\nYour {} {}\n\n{}\n\n".format(
-            " and ".join("'" + n + "'" for n in names),
-            _is,
-            "\n".join(values),
+            " and ".join(f"'{n}'" for n in names), _is, "\n".join(values)
         )
 
         opt = self.oauth_config(names[0])
         if self.cache and (opt is None or opt == "cache"):
-            msg += _vh + " been cached and will automatically be used."
+            msg += f"{_vh} been cached and will automatically be used."
         else:
-            msg += "Put " + _va + " into your configuration file as \n"
-            msg += " and\n".join(
-                "'extractor." + self.subcategory + "." + n + "'"
-                for n in names
-            )
+            msg += f"Put {_va}" + " into your configuration file as \n"
+            msg += " and\n".join(f"'extractor.{self.subcategory}.{n}'" for n in names)
             if self.cache:
-                msg += (
-                    "\nor set\n'extractor.{}.{}' to \"cache\""
-                    .format(self.subcategory, names[0])
-                )
-            msg += "\nto use {}.".format(_it)
+                msg += f"""\nor set\n'extractor.{self.subcategory}.{names[0]}' to \"cache\""""
+            msg += f"\nto use {_it}."
 
         return msg
 
@@ -331,8 +320,8 @@ class OAuthMastodon(OAuthBase):
         self._oauth2_authorization_code_grant(
             application["client-id"],
             application["client-secret"],
-            "https://{}/oauth/authorize".format(self.instance),
-            "https://{}/oauth/token".format(self.instance),
+            f"https://{self.instance}/oauth/authorize",
+            f"https://{self.instance}/oauth/token",
             key="access_token",
             message_template=MASTODON_MSG_TEMPLATE,
         )
@@ -341,9 +330,9 @@ class OAuthMastodon(OAuthBase):
     def _register(self, instance):
         self.log.info("Registering application for '%s'", instance)
 
-        url = "https://{}/api/v1/apps".format(instance)
+        url = f"https://{instance}/api/v1/apps"
         data = {
-            "client_name": "gdl:" + oauth.nonce(8),
+            "client_name": f"gdl:{oauth.nonce(8)}",
             "redirect_uris": self.redirect_uri,
             "scopes": "read",
         }

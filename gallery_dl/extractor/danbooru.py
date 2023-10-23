@@ -30,7 +30,7 @@ class DanbooruExtractor(Extractor):
 
     def __init__(self, match):
         super().__init__(match)
-        self.root = "https://{}.donmai.us".format(match.group(1))
+        self.root = f"https://{match.group(1)}.donmai.us"
         self.ugoira = self.config("ugoira", False)
 
         username, api_key = self._get_auth_info()
@@ -57,8 +57,7 @@ class DanbooruExtractor(Extractor):
             if post["extension"] == "zip":
                 if self.ugoira:
                     post["frames"] = self.request(
-                        "{}/posts/{}.json?only=pixiv_ugoira_frame_data".format(
-                            self.root, post["id"])
+                        f'{self.root}/posts/{post["id"]}.json?only=pixiv_ugoira_frame_data'
                     ).json()["pixiv_ugoira_frame_data"]["data"]
                 else:
                     url = post["large_file_url"]
@@ -96,7 +95,7 @@ class DanbooruExtractor(Extractor):
             else:
                 for post in reversed(posts):
                     if "id" in post:
-                        params["page"] = "b{}".format(post["id"])
+                        params["page"] = f'b{post["id"]}'
                         break
                 else:
                     return
@@ -149,14 +148,14 @@ class DanbooruPoolExtractor(DanbooruExtractor):
         self.post_ids = ()
 
     def metadata(self):
-        url = "{}/pools/{}.json".format(self.root, self.pool_id)
+        url = f"{self.root}/pools/{self.pool_id}.json"
         pool = self.request(url).json()
         pool["name"] = pool["name"].replace("_", " ")
         self.post_ids = pool.pop("post_ids")
         return {"pool": pool}
 
     def posts(self):
-        params = {"tags": "pool:" + self.pool_id}
+        params = {"tags": f"pool:{self.pool_id}"}
         return self._pagination("/posts.json", params)
 
 
@@ -180,7 +179,7 @@ class DanbooruPostExtractor(DanbooruExtractor):
         self.post_id = match.group(2)
 
     def posts(self):
-        url = "{}/posts/{}.json".format(self.root, self.post_id)
+        url = f"{self.root}/posts/{self.post_id}.json"
         post = self.request(url).json()
         return (post["post"] if "post" in post else post,)
 

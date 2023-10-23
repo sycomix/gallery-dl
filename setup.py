@@ -21,8 +21,7 @@ def check_file(fname):
     if os.path.exists(path):
         return True
     warnings.warn(
-        "Not including file '{}' since it is not present. "
-        "Run 'make' to build all automatically generated files.".format(fname)
+        f"Not including file '{fname}' since it is not present. Run 'make' to build all automatically generated files."
     )
     return False
 

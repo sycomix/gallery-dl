@@ -35,19 +35,17 @@ class WeasylExtractor(Extractor):
         self.session.headers['X-Weasyl-API-Key'] = self.config("api-key")
 
     def request_submission(self, submitid):
-        return self.request(
-            "{}/api/submissions/{}/view".format(self.root, submitid)).json()
+        return self.request(f"{self.root}/api/submissions/{submitid}/view").json()
 
     def retrieve_journal(self, journalid):
-        data = self.request(
-            "{}/api/journals/{}/view".format(self.root, journalid)).json()
+        data = self.request(f"{self.root}/api/journals/{journalid}/view").json()
         data["extension"] = "html"
         data["html"] = "text:" + data["content"]
         data["date"] = text.parse_datetime(data["posted_at"])
         return data
 
     def submissions(self, owner_login, folderid=None):
-        url = "{}/api/users/{}/gallery".format(self.root, owner_login)
+        url = f"{self.root}/api/users/{owner_login}/gallery"
         params = {
             "nextid"  : None,
             "folderid": folderid,
@@ -193,7 +191,7 @@ class WeasylJournalsExtractor(WeasylExtractor):
         yield Message.Version, 1
         yield Message.Directory, {"owner_login": self.owner_login}
 
-        url = "{}/journals/{}".format(self.root, self.owner_login)
+        url = f"{self.root}/journals/{self.owner_login}"
         page = self.request(url).text
         for journalid in text.extract_iter(page, 'href="/journal/', '/'):
             data = self.retrieve_journal(journalid)
@@ -214,7 +212,7 @@ class WeasylFavoriteExtractor(WeasylExtractor):
 
     def items(self):
         owner_login = lastid = None
-        url = self.root + "/favorites"
+        url = f"{self.root}/favorites"
         params = {
             "userid" : self.userid,
             "feature": "submit",

@@ -209,7 +209,7 @@ class InkbunnyAPI():
             self.set_allowed_ratings()
 
     def _call(self, endpoint, params):
-        url = "https://inkbunny.net/api_" + endpoint + ".php"
+        url = f"https://inkbunny.net/api_{endpoint}.php"
         params["sid"] = self.session_id
         data = self.extractor.request(url, params=params).json()
 

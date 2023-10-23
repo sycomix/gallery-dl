@@ -63,7 +63,7 @@ class WebtoonsEpisodeExtractor(WebtoonsExtractor):
             raise exception.NotFoundError("episode_no")
 
     def items(self):
-        url = "{}/{}/viewer?{}".format(self.root, self.path, self.query)
+        url = f"{self.root}/{self.path}/viewer?{self.query}"
         self.session.headers["Referer"] = url
 
         page = self.request(url).text
@@ -139,8 +139,7 @@ class WebtoonsComicExtractor(WebtoonsExtractor):
         data = {"_extractor": WebtoonsEpisodeExtractor}
 
         while True:
-            path = "/{}/list?title_no={}&page={}".format(
-                self.path, self.title_no, self.page_no)
+            path = f"/{self.path}/list?title_no={self.title_no}&page={self.page_no}"
 
             if page and path not in page:
                 return

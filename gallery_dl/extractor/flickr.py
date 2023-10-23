@@ -150,9 +150,7 @@ class FlickrAlbumExtractor(FlickrExtractor):
         self.album_id = match.group(2)
 
     def items(self):
-        if self.album_id:
-            return FlickrExtractor.items(self)
-        return self._album_items()
+        return FlickrExtractor.items(self) if self.album_id else self._album_items()
 
     def _album_items(self):
         yield Message.Version, 1
@@ -161,8 +159,7 @@ class FlickrAlbumExtractor(FlickrExtractor):
 
         for album in self.api.photosets_getList(self.user["nsid"]):
             self.api._clean_info(album).update(data)
-            url = "https://www.flickr.com/photos/{}/albums/{}".format(
-                self.user["path_alias"], album["id"])
+            url = f'https://www.flickr.com/photos/{self.user["path_alias"]}/albums/{album["id"]}'
             yield Message.Queue, url, album
 
     def metadata(self):
@@ -318,7 +315,7 @@ class FlickrAPI(oauth.OAuth1API):
         self.maxsize = extractor.config("size-max")
         if isinstance(self.maxsize, str):
             for fmt, fmtname, fmtwidth in self.FORMATS:
-                if self.maxsize == fmt or self.maxsize == fmtname:
+                if self.maxsize in [fmt, fmtname]:
                     self.maxsize = fmtwidth
                     break
             else:
@@ -397,7 +394,7 @@ class FlickrAPI(oauth.OAuth1API):
 
     def urls_lookupGroup(self, groupname):
         """Returns a group NSID, given the url to a group's page."""
-        params = {"url": "https://www.flickr.com/groups/" + groupname}
+        params = {"url": f"https://www.flickr.com/groups/{groupname}"}
         group = self._call("urls.lookupGroup", params)["group"]
         return {"nsid": group["id"],
                 "path_alias": groupname,
@@ -405,7 +402,7 @@ class FlickrAPI(oauth.OAuth1API):
 
     def urls_lookupUser(self, username):
         """Returns a user NSID, given the url to a user's photos or profile."""
-        params = {"url": "https://www.flickr.com/photos/" + username}
+        params = {"url": f"https://www.flickr.com/photos/{username}"}
         user = self._call("urls.lookupUser", params)["user"]
         return {
             "nsid"      : user["id"],
@@ -423,7 +420,7 @@ class FlickrAPI(oauth.OAuth1API):
         return max(stream, key=lambda s: self.VIDEO_FORMATS.get(s["type"], 0))
 
     def _call(self, method, params):
-        params["method"] = "flickr." + method
+        params["method"] = f"flickr.{method}"
         params["format"] = "json"
         params["nojsoncallback"] = "1"
         if self.api_key:
@@ -444,7 +441,7 @@ class FlickrAPI(oauth.OAuth1API):
     def _pagination(self, method, params, key="photos"):
         params["extras"] = ("description,date_upload,tags,views,media,"
                             "path_alias,owner_name,")
-        params["extras"] += ",".join("url_" + fmt[0] for fmt in self.formats)
+        params["extras"] += ",".join(f"url_{fmt[0]}" for fmt in self.formats)
         params["page"] = 1
 
         while True:
@@ -486,10 +483,10 @@ class FlickrAPI(oauth.OAuth1API):
             return self._extract_video(photo)
 
         for fmt, fmtname, fmtwidth in self.formats:
-            key = "url_" + fmt
+            key = f"url_{fmt}"
             if key in photo:
-                photo["width"] = text.parse_int(photo["width_" + fmt])
-                photo["height"] = text.parse_int(photo["height_" + fmt])
+                photo["width"] = text.parse_int(photo[f"width_{fmt}"])
+                photo["height"] = text.parse_int(photo[f"height_{fmt}"])
                 if self.maxsize and (photo["width"] > self.maxsize or
                                      photo["height"] > self.maxsize):
                     continue

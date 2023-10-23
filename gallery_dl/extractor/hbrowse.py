@@ -66,7 +66,7 @@ class HbrowseChapterExtractor(HbrowseBase, ChapterExtractor):
         })
 
     def images(self, page):
-        base = self.root + "/data" + self.path
+        base = f"{self.root}/data{self.path}"
         json_data = text.extract(page, ';list = ', ',"zzz"')[0] + "]"
         return [(base + name, None) for name in json.loads(json_data)]
 

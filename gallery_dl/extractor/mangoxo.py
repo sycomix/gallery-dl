@@ -36,10 +36,10 @@ class MangoxoExtractor(Extractor):
     def _login_impl(self, username, password):
         self.log.info("Logging in as %s", username)
 
-        url = self.root + "/api/login"
+        url = f"{self.root}/api/login"
         headers = {
             "X-Requested-With": "XMLHttpRequest",
-            "Referer": self.root + "/login",
+            "Referer": f"{self.root}/login",
         }
         data = self._sign_by_md5(username, password)
         response = self.request(url, method="POST", headers=headers, data=data)
@@ -57,8 +57,10 @@ class MangoxoExtractor(Extractor):
             ("password" , password),
             ("timestamp", str(int(time.time()))),
         ]
-        query = "&".join("=".join(item) for item in sorted(params))
-        query += "&secretKey=340836904"
+        query = (
+            "&".join("=".join(item) for item in sorted(params))
+            + "&secretKey=340836904"
+        )
         sign = hashlib.md5(query.encode()).hexdigest()
         params.append(("sign", sign.upper()))
         return params
@@ -101,7 +103,7 @@ class MangoxoAlbumExtractor(MangoxoExtractor):
 
     def items(self):
         self.login()
-        url = "{}/album/{}/".format(self.root, self.album_id)
+        url = f"{self.root}/album/{self.album_id}/"
         page = self.request(url).text
         data = self.metadata(page)
         imgs = self.images(url, page)
@@ -112,7 +114,7 @@ class MangoxoAlbumExtractor(MangoxoExtractor):
         data["extension"] = None
         for data["num"], path in enumerate(imgs, 1):
             data["id"] = text.parse_int(text.extract(path, "=", "&")[0])
-            url = self.root + "/external/" + path.rpartition("url=")[2]
+            url = f"{self.root}/external/" + path.rpartition("url=")[2]
             yield Message.Url, url, text.nameext_from_url(url, data)
 
     def metadata(self, page):
@@ -172,7 +174,7 @@ class MangoxoChannelExtractor(MangoxoExtractor):
     def items(self):
         self.login()
         num = total = 1
-        url = "{}/channel/{}/album/".format(self.root, self.channel_id)
+        url = f"{self.root}/channel/{self.channel_id}/album/"
         data = {"_extractor": MangoxoAlbumExtractor}
 
         yield Message.Version, 1

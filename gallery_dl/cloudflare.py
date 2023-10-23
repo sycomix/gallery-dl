@@ -31,7 +31,7 @@ def is_captcha(response):
 def solve_challenge(session, response, kwargs):
     """Solve Cloudflare challenge and get cfclearance cookie"""
     parsed = urllib.parse.urlsplit(response.url)
-    root = parsed.scheme + "://" + parsed.netloc
+    root = f"{parsed.scheme}://{parsed.netloc}"
     page = response.text
 
     cf_kwargs = {}
@@ -40,8 +40,7 @@ def solve_challenge(session, response, kwargs):
     headers["Referer"] = response.url
 
     form = text.extract(page, 'id="challenge-form"', '</form>')[0]
-    for element in ElementTree.fromstring(
-            "<f>" + form + "</f>").findall("input"):
+    for element in ElementTree.fromstring(f"<f>{form}</f>").findall("input"):
         name = element.attrib.get("name")
         if not name:
             continue
@@ -57,10 +56,10 @@ def solve_challenge(session, response, kwargs):
     try:
         params = {"ray": text.extract(page, '?ray=', '"')[0]}
 
-        url = root + "/cdn-cgi/images/trace/jschal/nojs/transparent.gif"
+        url = f"{root}/cdn-cgi/images/trace/jschal/nojs/transparent.gif"
         session.request("GET", url, params=params)
 
-        url = root + "/cdn-cgi/images/trace/jschal/js/nocookie/transparent.gif"
+        url = f"{root}/cdn-cgi/images/trace/jschal/js/nocookie/transparent.gif"
         session.request("GET", url, params=params)
     except Exception:
         pass
@@ -101,7 +100,7 @@ def solve_js_challenge(page, netloc):
         ('key' , '"'   , '"'),
         ('expr', ':'   , '}'),
     ))
-    variable = "{}.{}".format(data["var"], data["key"])
+    variable = f'{data["var"]}.{data["key"]}'
     vlength = len(variable)
 
     k = text.extract(page, "k = '", "'")[0]
@@ -142,7 +141,7 @@ def evaluate_expression(expr, page, netloc, k=""):
     if expr.startswith("function(p)"):
         # get HTML element with ID k and evaluate the expression inside
         # 'eval(eval("document.getElementById(k).innerHTML"))'
-        expr = text.extract(page, 'id="'+k+'"', '<')[0]
+        expr = text.extract(page, f'id="{k}"', '<')[0]
         return evaluate_expression(expr.partition(">")[2], page, netloc)
 
     if "/" in expr:

@@ -54,7 +54,7 @@ class ImagefapGalleryExtractor(ImagefapExtractor):
         self.image_id = ""
 
     def items(self):
-        url = "{}/pictures/{}/".format(self.root, self.gid)
+        url = f"{self.root}/pictures/{self.gid}/"
         page = self.request(url).text
         data = self.get_job_metadata(page)
         yield Message.Version, 1
@@ -83,7 +83,7 @@ class ImagefapGalleryExtractor(ImagefapExtractor):
     def get_images(self):
         """Collect image-urls and -metadata"""
         num = 0
-        url = "{}/photo/{}/".format(self.root, self.image_id)
+        url = f"{self.root}/photo/{self.image_id}/"
         params = {"gid": self.gid, "idx": 0, "partial": "true"}
         while True:
             pos = 0
@@ -123,7 +123,7 @@ class ImagefapImageExtractor(ImagefapExtractor):
         yield Message.Url, url, data
 
     def get_image(self):
-        url = "{}/photo/{}/".format(self.root, self.image_id)
+        url = f"{self.root}/photo/{self.image_id}/"
         page = self.request(url).text
 
         info, pos = text.extract(
@@ -171,7 +171,7 @@ class ImagefapUserExtractor(ImagefapExtractor):
     def items(self):
         yield Message.Version, 1
         for gid, name in self.get_gallery_data():
-            url = "{}/gallery/{}".format(self.root, gid)
+            url = f"{self.root}/gallery/{gid}"
             data = {
                 "gallery_id": text.parse_int(gid),
                 "title": text.unescape(name),
@@ -182,7 +182,7 @@ class ImagefapUserExtractor(ImagefapExtractor):
     def get_gallery_data(self):
         """Yield all gallery_ids of a specific user"""
         folders = self.get_gallery_folders()
-        url = "{}/ajax_usergallery_folder.php".format(self.root)
+        url = f"{self.root}/ajax_usergallery_folder.php"
         params = {"userid": self.user_id}
         for folder_id in folders:
             params["id"] = folder_id
@@ -199,10 +199,9 @@ class ImagefapUserExtractor(ImagefapExtractor):
     def get_gallery_folders(self):
         """Create a list of all folder_ids of a specific user"""
         if self.user:
-            url = "{}/profile/{}/galleries".format(self.root, self.user)
+            url = f"{self.root}/profile/{self.user}/galleries"
         else:
-            url = "{}/usergallery.php?userid={}".format(
-                self.root, self.user_id)
+            url = f"{self.root}/usergallery.php?userid={self.user_id}"
         page = self.request(url).text
         self.user_id, pos = text.extract(page, '?userid=', '"')
         folders, pos = text.extract(page, ' id="tgl_all" value="', '"', pos)

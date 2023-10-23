@@ -117,7 +117,7 @@ class TestDownloaderBase(unittest.TestCase):
 
     @classmethod
     def _prepare_destination(cls, content=None, part=True, extension=None):
-        name = "file-{}".format(cls.fnum)
+        name = f"file-{cls.fnum}"
         cls.fnum += 1
 
         kwdict = {
@@ -144,7 +144,7 @@ class TestDownloaderBase(unittest.TestCase):
         success = self.downloader.download(url, pathfmt)
 
         # test successful download
-        self.assertTrue(success, "downloading '{}' failed".format(url))
+        self.assertTrue(success, f"downloading '{url}' failed")
 
         # test content
         mode = "r" + ("b" if isinstance(output, bytes) else "")
@@ -171,10 +171,10 @@ class TestHTTPDownloader(TestDownloaderBase):
         cls.downloader = downloader.find("http")(cls.job)
 
         port = 8088
-        cls.address = "http://127.0.0.1:{}".format(port)
-        cls._jpg = cls.address + "/image.jpg"
-        cls._png = cls.address + "/image.png"
-        cls._gif = cls.address + "/image.gif"
+        cls.address = f"http://127.0.0.1:{port}"
+        cls._jpg = f"{cls.address}/image.jpg"
+        cls._png = f"{cls.address}/image.png"
+        cls._gif = f"{cls.address}/image.gif"
 
         server = http.server.HTTPServer(("", port), HttpRequestHandler)
         threading.Thread(target=server.serve_forever, daemon=True).start()
@@ -262,8 +262,7 @@ class HttpRequestHandler(http.server.BaseHTTPRequestHandler):
             match = re.match(r"bytes=(\d+)-", self.headers["Range"])
             start = int(match.group(1))
 
-            headers["Content-Range"] = "bytes {}-{}/{}".format(
-                start, len(output)-1, len(output))
+            headers["Content-Range"] = f"bytes {start}-{len(output) - 1}/{len(output)}"
             output = output[start:]
         else:
             status = 200

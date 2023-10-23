@@ -55,7 +55,7 @@ class Hentai2readChapterExtractor(Hentai2readBase, ChapterExtractor):
     def images(page):
         images = text.extract(page, "'images' : ", ",\n")[0]
         return [
-            ("https://hentaicdn.com/hentai" + part, None)
+            (f"https://hentaicdn.com/hentai{part}", None)
             for part in json.loads(images)
         ]
 

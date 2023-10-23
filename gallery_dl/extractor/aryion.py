@@ -41,7 +41,7 @@ class AryionExtractor(Extractor):
     def _login_impl(self, username, password):
         self.log.info("Logging in as %s", username)
 
-        url = self.root + "/forum/ucp.php?mode=login"
+        url = f"{self.root}/forum/ucp.php?mode=login"
         data = {
             "username": username,
             "password": password,
@@ -57,12 +57,11 @@ class AryionExtractor(Extractor):
         self.login()
 
         for post_id in self.posts():
-            post = self._parse_post(post_id)
-            if post:
+            if post := self._parse_post(post_id):
                 yield Message.Directory, post
                 yield Message.Url, post["url"], post
             elif post is False and self.recursive:
-                base = self.root + "/g4/view/"
+                base = f"{self.root}/g4/view/"
                 data = {"_extractor": AryionPostExtractor}
                 for post_id in self._pagination(base + post_id):
                     yield Message.Queue, base + post_id, data
@@ -82,7 +81,7 @@ class AryionExtractor(Extractor):
             url = self.root + text.rextract(page, "href='", "'", pos)[0]
 
     def _parse_post(self, post_id):
-        url = "{}/g4/data.php?id={}".format(self.root, post_id)
+        url = f"{self.root}/g4/data.php?id={post_id}"
         with self.request(url, method="HEAD", fatal=False) as response:
 
             if response.status_code >= 400:
@@ -113,9 +112,9 @@ class AryionExtractor(Extractor):
             # fix 'Last-Modified' header
             lmod = headers["last-modified"]
             if lmod[22] != ":":
-                lmod = "{}:{} GMT".format(lmod[:22], lmod[22:24])
+                lmod = f"{lmod[:22]}:{lmod[22:24]} GMT"
 
-        post_url = "{}/g4/view/{}".format(self.root, post_id)
+        post_url = f"{self.root}/g4/view/{post_id}"
         extr = text.extract_from(self.request(post_url).text)
 
         title, _, artist = text.unescape(extr(
@@ -178,11 +177,11 @@ class AryionGalleryExtractor(AryionExtractor):
 
     def posts(self):
         if self.recursive:
-            url = "{}/g4/gallery/{}".format(self.root, self.user)
+            url = f"{self.root}/g4/gallery/{self.user}"
             return self._pagination(url)
         else:
             self._needle = "class='thumb' href='/g4/view/"
-            url = "{}/g4/latest.php?name={}".format(self.root, self.user)
+            url = f"{self.root}/g4/latest.php?name={self.user}"
             return util.advance(self._pagination(url), self.offset)
 
 

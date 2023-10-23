@@ -214,15 +214,14 @@ def domain(cls):
         return url
 
     if hasattr(cls, "root") and cls.root:
-        return cls.root + "/"
+        return f"{cls.root}/"
 
     if hasattr(cls, "https"):
         scheme = "https" if cls.https else "http"
         netloc = cls.__doc__.split()[-1]
-        return "{}://{}/".format(scheme, netloc)
+        return f"{scheme}://{netloc}/"
 
-    test = next(cls._get_tests(), None)
-    if test:
+    if test := next(cls._get_tests(), None):
         url = test[0]
         return url[:url.find("/", 8)+1]
 
@@ -248,22 +247,20 @@ def subcategory_text(cls):
         return SUBCATEGORY_MAP[sc]
 
     sc = sc.capitalize()
-    return sc if sc.endswith("s") else sc + "s"
+    return sc if sc.endswith("s") else f"{sc}s"
 
 
 def category_key(cls):
     """Generate sorting keys by category"""
     key = category_text(cls).lower()
     if cls.__module__.endswith(".imagehosts"):
-        key = "zz" + key
+        key = f"zz{key}"
     return key
 
 
 def subcategory_key(cls):
     """Generate sorting keys by subcategory"""
-    if cls.subcategory == "issue":
-        return "A"
-    return cls.subcategory
+    return "A" if cls.subcategory == "issue" else cls.subcategory
 
 
 def build_extractor_list():

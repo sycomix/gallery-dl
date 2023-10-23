@@ -40,10 +40,10 @@ class ArtstationExtractor(Extractor):
                 if adict["has_embedded_player"] and self.external:
                     player = adict["player_embedded"]
                     url = text.extract(player, 'src="', '"')[0] or \
-                        text.extract(player, "src='", "'")[0]
+                            text.extract(player, "src='", "'")[0]
                     if url and not url.startswith(self.root):
                         asset["extension"] = None
-                        yield Message.Url, "ytdl:" + url, asset
+                        yield (Message.Url, f"ytdl:{url}", asset)
                         continue
 
                 if adict["has_image"]:
@@ -60,7 +60,7 @@ class ArtstationExtractor(Extractor):
 
     def get_project_assets(self, project_id):
         """Return all assets associated with 'project_id'"""
-        url = "{}/projects/{}.json".format(self.root, project_id)
+        url = f"{self.root}/projects/{project_id}.json"
         data = self.request(url).json()
 
         data["title"] = text.unescape(data["title"])
@@ -82,7 +82,7 @@ class ArtstationExtractor(Extractor):
 
     def get_user_info(self, username):
         """Return metadata for a specific user"""
-        url = "{}/users/{}/quick.json".format(self.root, username.lower())
+        url = f"{self.root}/users/{username.lower()}/quick.json"
         response = self.request(url, notfound="user")
         return response.json()
 
@@ -121,8 +121,7 @@ class ArtstationExtractor(Extractor):
         https://github.com/r888888888/danbooru/issues/3528
         https://danbooru.donmai.us/forum_topics/14952
         """
-        param = "gallerydl_no_cache=" + util.bencode(
-            random.getrandbits(64), alphabet)
+        param = f"gallerydl_no_cache={util.bencode(random.getrandbits(64), alphabet)}"
         sep = "&" if "?" in url else "?"
         return url + sep + param
 
@@ -145,7 +144,7 @@ class ArtstationUserExtractor(ArtstationExtractor):
     )
 
     def projects(self):
-        url = "{}/users/{}/projects.json".format(self.root, self.user)
+        url = f"{self.root}/users/{self.user}/projects.json"
         return self._pagination(url)
 
 
@@ -188,7 +187,7 @@ class ArtstationAlbumExtractor(ArtstationExtractor):
         }
 
     def projects(self):
-        url = "{}/users/{}/projects.json".format(self.root, self.user)
+        url = f"{self.root}/users/{self.user}/projects.json"
         params = {"album_id": self.album_id}
         return self._pagination(url, params)
 
@@ -213,7 +212,7 @@ class ArtstationLikesExtractor(ArtstationExtractor):
     )
 
     def projects(self):
-        url = "{}/users/{}/likes.json".format(self.root, self.user)
+        url = f"{self.root}/users/{self.user}/likes.json"
         return self._pagination(url)
 
 
@@ -242,12 +241,9 @@ class ArtstationChallengeExtractor(ArtstationExtractor):
         self.sorting = match.group(2) or "popular"
 
     def items(self):
-        challenge_url = "{}/contests/_/challenges/{}.json".format(
-            self.root, self.challenge_id)
-        submission_url = "{}/contests/_/challenges/{}/submissions.json".format(
-            self.root, self.challenge_id)
-        update_url = "{}/contests/submission_updates.json".format(
-            self.root)
+        challenge_url = f"{self.root}/contests/_/challenges/{self.challenge_id}.json"
+        submission_url = f"{self.root}/contests/_/challenges/{self.challenge_id}/submissions.json"
+        update_url = f"{self.root}/contests/submission_updates.json"
 
         challenge = self.request(challenge_url).json()
         yield Message.Version, 1
@@ -299,7 +295,7 @@ class ArtstationSearchExtractor(ArtstationExtractor):
         }}
 
     def projects(self):
-        url = "{}/api/v2/search/projects.json".format(self.root)
+        url = f"{self.root}/api/v2/search/projects.json"
         return self._pagination(url, json={
             "additional_fields": "[]",
             "filters"          : "[]",
@@ -331,7 +327,7 @@ class ArtstationArtworkExtractor(ArtstationExtractor):
         return {"artwork": self.query}
 
     def projects(self):
-        url = "{}/projects.json".format(self.root)
+        url = f"{self.root}/projects.json"
         return self._pagination(url, self.query.copy())
 
 
@@ -393,8 +389,8 @@ class ArtstationFollowingExtractor(ArtstationExtractor):
     })
 
     def items(self):
-        url = "{}/users/{}/following.json".format(self.root, self.user)
+        url = f"{self.root}/users/{self.user}/following.json"
         for user in self._pagination(url):
-            url = "{}/{}".format(self.root, user["username"])
+            url = f'{self.root}/{user["username"]}'
             user["_extractor"] = ArtstationUserExtractor
             yield Message.Queue, url, user

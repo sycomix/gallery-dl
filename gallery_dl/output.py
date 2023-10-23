@@ -146,8 +146,7 @@ def configure_logging(loglevel):
 
     # stream logging handler
     handler = root.handlers[0]
-    opts = config.interpolate(("output",), "log")
-    if opts:
+    if opts := config.interpolate(("output",), "log"):
         if isinstance(opts, str):
             opts = {"format": opts}
         if handler.level == LOG_LEVEL and "level" in opts:
@@ -157,16 +156,10 @@ def configure_logging(loglevel):
                 opts.get("format", LOG_FORMAT),
                 opts.get("format-date", LOG_FORMAT_DATE),
             ))
-        if minlevel > handler.level:
-            minlevel = handler.level
-
-    # file logging handler
-    handler = setup_logging_handler("logfile", lvl=loglevel)
-    if handler:
+        minlevel = min(minlevel, handler.level)
+    if handler := setup_logging_handler("logfile", lvl=loglevel):
         root.addHandler(handler)
-        if minlevel > handler.level:
-            minlevel = handler.level
-
+        minlevel = min(minlevel, handler.level)
     root.setLevel(minlevel)
 
 
@@ -207,8 +200,7 @@ def setup_logging_handler(key, fmt=LOG_FORMAT, lvl=LOG_LEVEL):
 def replace_std_streams(errors="replace"):
     """Replace standard streams and set their error handlers to 'errors'"""
     for name in ("stdout", "stdin", "stderr"):
-        stream = getattr(sys, name)
-        if stream:
+        if stream := getattr(sys, name):
             setattr(sys, name, stream.__class__(
                 stream.buffer,
                 errors=errors,
@@ -239,7 +231,7 @@ def select():
         else:
             return PipeOutput()
     else:
-        raise Exception("invalid output mode: " + omode)
+        raise Exception(f"invalid output mode: {omode}")
 
 
 class NullOutput():
@@ -271,7 +263,7 @@ class TerminalOutput(NullOutput):
             self.width = shutil.get_terminal_size().columns - OFFSET
 
     def start(self, path):
-        print(self.shorten("  " + path), end="", flush=True)
+        print(self.shorten(f"  {path}"), end="", flush=True)
 
     def skip(self, path):
         print(self.shorten(CHAR_SKIP + path))
@@ -306,12 +298,12 @@ class ColorOutput(TerminalOutput):
 if util.WINDOWS:
     ANSI = os.environ.get("TERM") == "ANSI"
     OFFSET = 1
-    CHAR_SKIP = "# "
     CHAR_SUCCESS = "* "
     CHAR_ELLIPSIES = "..."
 else:
     ANSI = True
     OFFSET = 0
-    CHAR_SKIP = "# "
     CHAR_SUCCESS = "✔ "
     CHAR_ELLIPSIES = "…"
+
+CHAR_SKIP = "# "

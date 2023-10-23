@@ -39,12 +39,10 @@ class DerpibooruExtractor(BooruExtractor):
         params["page"] = 1
         params["per_page"] = self.per_page
 
-        api_key = self.config("api-key")
-        if api_key:
+        if api_key := self.config("api-key"):
             params["key"] = api_key
 
-        filter_id = self.config("filter")
-        if filter_id:
+        if filter_id := self.config("filter"):
             params["filter_id"] = filter_id
 
         while True:
@@ -114,7 +112,7 @@ class DerpibooruPostExtractor(DerpibooruExtractor):
         self.image_id = match.group(1)
 
     def posts(self):
-        url = self.root + "/api/v1/json/images/" + self.image_id
+        url = f"{self.root}/api/v1/json/images/{self.image_id}"
         return (self.request(url).json()["image"],)
 
 
@@ -143,7 +141,7 @@ class DerpibooruSearchExtractor(DerpibooruExtractor):
         return {"search_tags": self.params.get("q", "")}
 
     def posts(self):
-        url = self.root + "/api/v1/json/search/images"
+        url = f"{self.root}/api/v1/json/search/images"
         return self._pagination(url, self.params)
 
 
@@ -173,15 +171,15 @@ class DerpibooruGalleryExtractor(DerpibooruExtractor):
         self.gallery_id = match.group(1)
 
     def metadata(self):
-        url = self.root + "/api/v1/json/search/galleries"
-        params = {"q": "id:" + self.gallery_id}
-        galleries = self.request(url, params=params).json()["galleries"]
-        if not galleries:
+        url = f"{self.root}/api/v1/json/search/galleries"
+        params = {"q": f"id:{self.gallery_id}"}
+        if galleries := self.request(url, params=params).json()["galleries"]:
+            return {"gallery": galleries[0]}
+        else:
             raise exception.NotFoundError("gallery")
-        return {"gallery": galleries[0]}
 
     def posts(self):
-        gallery_id = "gallery_id:" + self.gallery_id
-        url = self.root + "/api/v1/json/search/images"
+        gallery_id = f"gallery_id:{self.gallery_id}"
+        url = f"{self.root}/api/v1/json/search/images"
         params = {"sd": "desc", "sf": gallery_id, "q" : gallery_id}
         return self._pagination(url, params)

@@ -55,9 +55,7 @@ class Extractor():
 
         if self._retries < 0:
             self._retries = float("inf")
-        if self.request_interval < self.request_interval_min:
-            self.request_interval = self.request_interval_min
-
+        self.request_interval = max(self.request_interval, self.request_interval_min)
         if self.basecategory:
             self.config = self._config_shared
             self.config_accumulate = self._config_shared_accumulate
@@ -96,8 +94,7 @@ class Extractor():
 
     def _config_shared_accumulate(self, key):
         values = config.accumulate(self._cfgpath, key)
-        conf = config.get(("extractor",), self.basecategory)
-        if conf:
+        if conf := config.get(("extractor",), self.basecategory):
             values[:0] = config.accumulate((self.subcategory,), key, conf=conf)
         return values
 
@@ -132,8 +129,8 @@ class Extractor():
                 if self._write_pages:
                     self._dump_response(response)
                 if 200 <= code < 400 or fatal is None and \
-                        (400 <= code < 500) or not fatal and \
-                        (400 <= code < 429 or 431 <= code < 500):
+                            (400 <= code < 500) or not fatal and \
+                            (400 <= code < 429 or 431 <= code < 500):
                     if encoding:
                         response.encoding = encoding
                     return response
@@ -152,7 +149,7 @@ class Extractor():
                 if cloudflare.is_captcha(response):
                     self.log.warning("Cloudflare CAPTCHA")
 
-                msg = "'{} {}' for '{}'".format(code, reason, url)
+                msg = f"'{code} {reason}' for '{url}'"
                 if code < 500 and code != 429 and code != 430:
                     break
             finally:
@@ -228,8 +225,7 @@ class Extractor():
 
     def _init_proxies(self):
         """Update the session's proxy map"""
-        proxies = self.config("proxy")
-        if proxies:
+        if proxies := self.config("proxy"):
             if isinstance(proxies, str):
                 proxies = {"http": proxies, "https": proxies}
             if isinstance(proxies, dict):
@@ -245,8 +241,7 @@ class Extractor():
         if self.cookiedomain is None:
             return
 
-        cookies = self.config("cookies")
-        if cookies:
+        if cookies := self.config("cookies"):
             if isinstance(cookies, dict):
                 self._update_cookies_dict(cookies, self.cookiedomain)
             elif isinstance(cookies, str):
@@ -264,8 +259,7 @@ class Extractor():
                     "expected 'dict' or 'str' value for 'cookies' option, "
                     "got '%s' (%s)", cookies.__class__.__name__, cookies)
 
-        cookies = cloudflare.cookies(self.category)
-        if cookies:
+        if cookies := cloudflare.cookies(self.category):
             domain, cookies = cookies
             self._update_cookies_dict(cookies, domain)
 
@@ -389,7 +383,7 @@ class Extractor():
         )[:250]
 
         try:
-            with open(fname + ".dump", 'wb') as fp:
+            with open(f"{fname}.dump", 'wb') as fp:
                 util.dump_response(
                     response, fp, headers=(self._write_pages == "all"))
         except Exception as e:
@@ -548,16 +542,16 @@ def generate_extractors(extractor_data, symtable, classes):
 
         for cls in classes:
 
+
             class Extr(cls):
                 pass
             Extr.__module__ = cls.__module__
             Extr.__name__ = Extr.__qualname__ = \
                 name + cls.subcategory.capitalize() + "Extractor"
-            Extr.__doc__ = \
-                "Extractor for " + cls.subcategory + "s from " + domain
+            Extr.__doc__ = f"Extractor for {cls.subcategory}s from {domain}"
             Extr.category = category
-            Extr.pattern = r"(?:https?://)?" + pattern + cls.pattern_fmt
-            Extr.test = info.get("test-" + cls.subcategory)
+            Extr.pattern = f"(?:https?://)?{pattern}{cls.pattern_fmt}"
+            Extr.test = info.get(f"test-{cls.subcategory}")
             Extr.root = root
 
             if "extra" in info:

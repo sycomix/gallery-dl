@@ -156,36 +156,33 @@ Response Headers
 {response_headers}
 """
         if hide_auth:
-            authorization = req_headers.get("Authorization")
-            if authorization:
+            if authorization := req_headers.get("Authorization"):
                 atype, sep, _ = authorization.partition(" ")
-                req_headers["Authorization"] = atype + " ***" if sep else "***"
+                req_headers["Authorization"] = f"{atype} ***" if sep else "***"
 
-            cookie = req_headers.get("Cookie")
-            if cookie:
+            if cookie := req_headers.get("Cookie"):
                 req_headers["Cookie"] = ";".join(
                     c.partition("=")[0] + "=***"
                     for c in cookie.split(";")
                 )
 
-            set_cookie = res_headers.get("Set-Cookie")
-            if set_cookie:
+            if set_cookie := res_headers.get("Set-Cookie"):
                 res_headers["Set-Cookie"] = re.sub(
                     r"(^|, )([^ =]+)=[^,;]*", r"\1\2=***", set_cookie,
                 )
 
-        fp.write(outfmt.format(
-            request=request,
-            response=response,
-            request_headers="\n".join(
-                name + ": " + value
-                for name, value in req_headers.items()
-            ),
-            response_headers="\n".join(
-                name + ": " + value
-                for name, value in res_headers.items()
-            ),
-        ).encode())
+        fp.write(
+            outfmt.format(
+                request=request,
+                response=response,
+                request_headers="\n".join(
+                    f"{name}: {value}" for name, value in req_headers.items()
+                ),
+                response_headers="\n".join(
+                    f"{name}: {value}" for name, value in res_headers.items()
+                ),
+            ).encode()
+        )
 
     if content:
         if headers:
@@ -287,10 +284,9 @@ def language_to_code(lang, default=None):
     if lang is None:
         return default
     lang = lang.capitalize()
-    for code, language in CODES.items():
-        if language == lang:
-            return code
-    return default
+    return next(
+        (code for code, language in CODES.items() if language == lang), default
+    )
 
 
 CODES = {
@@ -380,10 +376,7 @@ class RangePredicate():
         if self.index > self.upper:
             raise exception.StopExtraction()
 
-        for lower, upper in self.ranges:
-            if lower <= self.index <= upper:
-                return True
-        return False
+        return any(lower <= self.index <= upper for lower, upper in self.ranges)
 
     @staticmethod
     def parse_range(rangespec):
@@ -452,7 +445,7 @@ class FilterPredicate():
     """Predicate; True if evaluating the given expression returns True"""
 
     def __init__(self, filterexpr, target="image"):
-        name = "<{} filter>".format(target)
+        name = f"<{target} filter>"
         self.codeobj = compile(filterexpr, name, "eval")
         self.globals = {
             "parse_int": text.parse_int,
@@ -477,10 +470,7 @@ class ChainPredicate():
         self.predicates = predicates
 
     def __call__(self, url, kwds):
-        for pred in self.predicates:
-            if not pred(url, kwds):
-                return False
-        return True
+        return all(pred(url, kwds) for pred in self.predicates)
 
 
 class ExtendedUrl():
@@ -584,11 +574,8 @@ class Formatter():
                 self._parse_field_name(fn)
                 for fn in field_name.split("|")
             ], fmt)
-        else:
-            key, funcs = self._parse_field_name(field_name)
-            if funcs:
-                return self._apply(key, funcs, fmt)
-            return self._apply_simple(key, fmt)
+        key, funcs = self._parse_field_name(field_name)
+        return self._apply(key, funcs, fmt) if funcs else self._apply_simple(key, fmt)
 
     @staticmethod
     def _parse_field_name(field_name):
@@ -623,24 +610,24 @@ class Formatter():
         conversion = self.CONVERSIONS[conversion]
         if fmt is format:
             return conversion
-        else:
-            def chain(obj):
-                return fmt(conversion(obj))
-            return chain
+        def chain(obj):
+            return fmt(conversion(obj))
+
+        return chain
 
     def _build_format_func(self, format_spec):
-        if format_spec:
-            fmt = format_spec[0]
-            if fmt == "?":
-                return self._parse_optional(format_spec)
-            if fmt == "L":
-                return self._parse_maxlen(format_spec)
-            if fmt == "J":
-                return self._parse_join(format_spec)
-            if fmt == "R":
-                return self._parse_replace(format_spec)
-            return self._default_format(format_spec)
-        return format
+        if not format_spec:
+            return format
+        fmt = format_spec[0]
+        if fmt == "?":
+            return self._parse_optional(format_spec)
+        if fmt == "L":
+            return self._parse_maxlen(format_spec)
+        if fmt == "J":
+            return self._parse_join(format_spec)
+        if fmt == "R":
+            return self._parse_replace(format_spec)
+        return self._default_format(format_spec)
 
     def _apply(self, key, funcs, fmt):
         def wrap(kwdict):
@@ -793,8 +780,9 @@ class PathFormat():
             def func(x, c=chars, r=repl):
                 return x.replace(c, r)
         else:
-            def func(x, sub=re.compile("[" + chars + "]").sub, r=repl):
+            def func(x, sub=re.compile(f"[{chars}]").sub, r=repl):
                 return sub(r, x)
+
         return func
 
     def open(self, mode="wb"):
@@ -815,7 +803,7 @@ class PathFormat():
         num = 1
         try:
             while True:
-                self.prefix = str(num) + "."
+                self.prefix = f"{str(num)}."
                 self.set_extension(self.extension, False)
                 os.stat(self.realpath)  # raises OSError if file doesn't exist
                 num += 1
@@ -945,8 +933,7 @@ class PathFormat():
                 shutil.copyfile(self.temppath, self.realpath)
                 os.unlink(self.temppath)
 
-        mtime = self.kwdict.get("_mtime")
-        if mtime:
+        if mtime := self.kwdict.get("_mtime"):
             # Set file modification time
             try:
                 if isinstance(mtime, str):

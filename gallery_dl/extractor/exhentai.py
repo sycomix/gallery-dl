@@ -41,8 +41,8 @@ class ExhentaiExtractor(Extractor):
         domain = self.config("domain", "auto")
         if domain == "auto":
             domain = ("ex" if version == "ex" else "e-") + "hentai.org"
-        self.root = "https://" + domain
-        self.cookiedomain = "." + domain
+        self.root = f"https://{domain}"
+        self.cookiedomain = f".{domain}"
 
         Extractor.__init__(self, match)
         self.limits = self.config("limits", True)
@@ -57,9 +57,8 @@ class ExhentaiExtractor(Extractor):
             self._limit_max = 0
 
         self._remaining = 0
-        if self.wait_max < self.wait_min:
-            self.wait_max = self.wait_min
-        self.session.headers["Referer"] = self.root + "/"
+        self.wait_max = max(self.wait_max, self.wait_min)
+        self.session.headers["Referer"] = f"{self.root}/"
         if version != "ex":
             self.session.cookies.set("nw", "1", domain=self.cookiedomain)
 
@@ -240,7 +239,7 @@ class ExhentaiGalleryExtractor(ExhentaiExtractor):
 
         try:
             if self.original and orig:
-                url = self.root + "/fullimg.php" + text.unescape(orig)
+                url = f"{self.root}/fullimg.php{text.unescape(orig)}"
                 data = self._parse_original_info(extr('ownload original', '<'))
             else:
                 url = iurl
@@ -258,7 +257,7 @@ class ExhentaiGalleryExtractor(ExhentaiExtractor):
 
     def images_from_api(self):
         """Get image url and data from api calls"""
-        api_url = self.root + "/api.php"
+        api_url = f"{self.root}/api.php"
         nextkey = self.key["next"]
         request = {
             "method" : "showpage",
@@ -294,8 +293,7 @@ class ExhentaiGalleryExtractor(ExhentaiExtractor):
             request["imgkey"] = nextkey
 
     def _gallery_page(self):
-        url = "{}/g/{}/{}/".format(
-            self.root, self.gallery_id, self.gallery_token)
+        url = f"{self.root}/g/{self.gallery_id}/{self.gallery_token}/"
         response = self.request(url, fatal=False)
         page = response.text
 
@@ -308,8 +306,7 @@ class ExhentaiGalleryExtractor(ExhentaiExtractor):
         return page
 
     def _image_page(self):
-        url = "{}/s/{}/{}-{}".format(
-            self.root, self.image_token, self.gallery_id, self.image_num)
+        url = f"{self.root}/s/{self.image_token}/{self.gallery_id}-{self.image_num}"
         page = self.request(url, fatal=False).text
 
         if page.startswith(("Invalid page", "Keep trying")):
@@ -323,8 +320,7 @@ class ExhentaiGalleryExtractor(ExhentaiExtractor):
 
         if self._remaining <= 0:
             ExhentaiExtractor.LIMIT = True
-            url = "{}/s/{}/{}-{}".format(
-                self.root, data["image_token"], self.gallery_id, data["num"])
+            url = f'{self.root}/s/{data["image_token"]}/{self.gallery_id}-{data["num"]}'
             raise exception.StopExtraction(
                 "Image limit reached! Continue with '%s' "
                 "as URL after resetting it.", url)
@@ -435,4 +431,4 @@ class ExhentaiFavoriteExtractor(ExhentaiSearchExtractor):
 
     def __init__(self, match):
         ExhentaiSearchExtractor.__init__(self, match)
-        self.search_url = self.root + "/favorites.php"
+        self.search_url = f"{self.root}/favorites.php"

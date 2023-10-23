@@ -32,7 +32,7 @@ class NijieExtractor(AsynchronousMixin, Extractor):
         Extractor.__init__(self, match)
         self.user_id = text.parse_int(match.group(1))
         self.user_name = None
-        self.session.headers["Referer"] = self.root + "/"
+        self.session.headers["Referer"] = f"{self.root}/"
 
     def items(self):
         self.login()
@@ -105,7 +105,7 @@ class NijieExtractor(AsynchronousMixin, Extractor):
                 "Username and password required")
 
         self.log.info("Logging in as %s", username)
-        url = "{}/login_int.php".format(self.root)
+        url = f"{self.root}/login_int.php"
         data = {"email": username, "password": password, "save": "on"}
 
         response = self.request(url, method="POST", data=data)
@@ -114,7 +114,7 @@ class NijieExtractor(AsynchronousMixin, Extractor):
         return self.session.cookies
 
     def _pagination(self, path):
-        url = "{}/{}.php".format(self.root, path)
+        url = f"{self.root}/{path}.php"
         params = {"id": self.user_id, "p": 1}
 
         while True:

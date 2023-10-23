@@ -52,15 +52,14 @@ class MyportfolioGalleryExtractor(Extractor):
 
     def items(self):
         yield Message.Version, 1
-        url = "https://" + self.domain + (self.path or "")
+        url = f"https://{self.domain}" + (self.path or "")
         page = self.request(url).text
 
-        projects = text.extract(
-            page, '<section class="project-covers', '</section>')[0]
-
-        if projects:
+        if projects := text.extract(
+            page, '<section class="project-covers', '</section>'
+        )[0]:
             data = {"_extractor": MyportfolioGalleryExtractor}
-            base = self.prefix + "https://" + self.domain
+            base = f"{self.prefix}https://{self.domain}"
             for path in text.extract_iter(projects, ' href="', '"'):
                 yield Message.Queue, base + path, data
         else:

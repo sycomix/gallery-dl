@@ -111,8 +111,7 @@ class TumblrExtractor(Extractor):
             if url and url.startswith("https://a.tumblr.com/"):
                 yield self._prepare(url, post)
 
-            url = post.get("video_url")  # type "video"
-            if url:
+            if url := post.get("video_url"):
                 yield self._prepare(_original_video(url), post)
 
             if self.inline and "reblog" in post:  # inline media
@@ -128,8 +127,7 @@ class TumblrExtractor(Extractor):
 
             if self.external:  # external links
                 post["extension"] = None
-                url = post.get("permalink_url") or post.get("url")
-                if url:
+                if url := post.get("permalink_url") or post.get("url"):
                     yield Message.Queue, url, post
 
     def posts(self):
@@ -149,8 +147,7 @@ class TumblrExtractor(Extractor):
                 types = types.split(",")
             types = frozenset(types)
 
-            invalid = types - POST_TYPES
-            if invalid:
+            if invalid := types - POST_TYPES:
                 types = types & POST_TYPES
                 self.log.warning("Invalid post types: '%s'",
                                  "', '".join(sorted(invalid)))
@@ -376,8 +373,7 @@ class TumblrAPI(oauth.OAuth1API):
     def _call(self, blog, endpoint, params, **kwargs):
         if self.api_key:
             params["api_key"] = self.api_key
-        url = "https://api.tumblr.com/v2/blog/{}/{}".format(
-            blog, endpoint)
+        url = f"https://api.tumblr.com/v2/blog/{blog}/{endpoint}"
 
         response = self.request(url, params=params, **kwargs)
 
@@ -396,7 +392,6 @@ class TumblrAPI(oauth.OAuth1API):
         elif status == 404:
             raise exception.NotFoundError("user or post")
         elif status == 429:
-
             # daily rate limit
             if response.headers.get("x-ratelimit-perday-remaining") == "0":
                 reset = response.headers.get("x-ratelimit-perday-reset")
@@ -407,9 +402,7 @@ class TumblrAPI(oauth.OAuth1API):
                     "Aborting - Rate limit will reset at %s",
                     "{:02}:{:02}:{:02}".format(t.hour, t.minute, t.second))
 
-            # hourly rate limit
-            reset = response.headers.get("x-ratelimit-perhour-reset")
-            if reset:
+            if reset := response.headers.get("x-ratelimit-perhour-reset"):
                 self.log.info("Hourly API rate limit exceeded")
                 self.extractor.wait(seconds=reset)
                 return self._call(blog, endpoint, params)

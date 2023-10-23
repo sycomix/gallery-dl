@@ -55,7 +55,7 @@ class HentaifoxGalleryExtractor(HentaifoxBase, GalleryExtractor):
             load_dir = extr(page, 'id="load_dir" value="', '"', pos)[0]
             load_pages = extr(page, 'id="load_pages" value="', '"', pos)[0]
 
-            url = self.root + "/includes/thumbs_loader.php"
+            url = f"{self.root}/includes/thumbs_loader.php"
             data = {
                 "u_id"         : self.gallery_id,
                 "g_id"         : load_id,
@@ -112,7 +112,7 @@ class HentaifoxSearchExtractor(HentaifoxBase, Extractor):
         num = 1
 
         while True:
-            url = "{}{}/pag/{}/".format(self.root, self.path, num)
+            url = f"{self.root}{self.path}/pag/{num}/"
             page = self.request(url).text
 
             for info in text.extract_iter(

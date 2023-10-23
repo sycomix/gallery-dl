@@ -64,7 +64,7 @@ class TestPredicate(unittest.TestCase):
         dummy = None
 
         pred = util.RangePredicate(" - 3 , 4-  4, 2-6")
-        for i in range(6):
+        for _ in range(6):
             self.assertTrue(pred(dummy, dummy))
         with self.assertRaises(exception.StopExtraction):
             bool(pred(dummy, dummy))
@@ -332,7 +332,7 @@ class TestFormatter(unittest.TestCase):
         self._run_test("{missing}"     , replacement, default)
         self._run_test("{missing.attr}", replacement, default)
         self._run_test("{missing[key]}", replacement, default)
-        self._run_test("{missing:?a//}", "a" + default, default)
+        self._run_test("{missing:?a//}", f"a{default}", default)
 
     def test_alternative(self):
         self._run_test("{a|z}"    , "hElLo wOrLd")

@@ -60,8 +60,7 @@ class Job():
 
     def run(self):
         """Execute or run the job"""
-        sleep = self.extractor.config("sleep-extractor")
-        if sleep:
+        if sleep := self.extractor.config("sleep-extractor"):
             time.sleep(sleep)
         try:
             log = self.extractor.log
@@ -117,9 +116,7 @@ class Job():
 
         elif msg[0] == Message.Version:
             if msg[1] != 1:
-                raise "unsupported message-version ({}, {})".format(
-                    self.extractor.category, msg[1]
-                )
+                raise f"unsupported message-version ({self.extractor.category}, {msg[1]})"
             # TODO: support for multiple message versions
 
     def handle_url(self, url, kwdict):
@@ -148,10 +145,10 @@ class Job():
     def _prepare_predicates(self, target, skip=True):
         predicates = []
 
-        if self.extractor.config(target + "-unique"):
+        if self.extractor.config(f"{target}-unique"):
             predicates.append(util.UniquePredicate())
 
-        pfilter = self.extractor.config(target + "-filter")
+        pfilter = self.extractor.config(f"{target}-filter")
         if pfilter:
             try:
                 pred = util.FilterPredicate(pfilter, target)
@@ -160,8 +157,7 @@ class Job():
             else:
                 predicates.append(pred)
 
-        prange = self.extractor.config(target + "-range")
-        if prange:
+        if prange := self.extractor.config(f"{target}-range"):
             try:
                 pred = util.RangePredicate(prange)
             except ValueError as exc:
@@ -334,8 +330,7 @@ class DownloadJob(Job):
     def download(self, url):
         """Download 'url'"""
         scheme = url.partition(":")[0]
-        downloader = self.get_downloader(scheme)
-        if downloader:
+        if downloader := self.get_downloader(scheme):
             try:
                 return downloader.download(url, self.pathfmt)
             except OSError as exc:
@@ -378,8 +373,7 @@ class DownloadJob(Job):
             # monkey-patch method to do nothing and always return True
             self.download = pathfmt.fix_extension
 
-        archive = config("archive")
-        if archive:
+        if archive := config("archive"):
             path = util.expand_path(archive)
             try:
                 if "{" in path:
@@ -392,8 +386,7 @@ class DownloadJob(Job):
             else:
                 self.extractor.log.debug("Using download archive '%s'", path)
 
-        skip = config("skip", True)
-        if skip:
+        if skip := config("skip", True):
             self._skipexc = None
             if skip == "enumerate":
                 pathfmt.check_file = pathfmt._enum_file
@@ -411,8 +404,7 @@ class DownloadJob(Job):
             if self.archive:
                 self.archive.check = pathfmt.exists
 
-        postprocessors = self.extractor.config_accumulate("postprocessors")
-        if postprocessors:
+        if postprocessors := self.extractor.config_accumulate("postprocessors"):
             self.hooks = collections.defaultdict(list)
             pp_log = self.get_logger("postprocessor")
             pp_list = []
@@ -423,7 +415,7 @@ class DownloadJob(Job):
 
                 whitelist = pp_dict.get("whitelist")
                 if whitelist and category not in whitelist and \
-                        basecategory not in whitelist:
+                            basecategory not in whitelist:
                     continue
 
                 blacklist = pp_dict.get("blacklist")
@@ -502,10 +494,7 @@ class KeywordJob(Job):
         self.print_kwdict(kwdict)
 
     def handle_queue(self, url, kwdict):
-        extr = None
-        if "_extractor" in kwdict:
-            extr = kwdict["_extractor"].from_url(url)
-
+        extr = kwdict["_extractor"].from_url(url) if "_extractor" in kwdict else None
         if not util.filter_dict(kwdict):
             self.extractor.log.info(
                 "This extractor only spawns other extractors "
@@ -537,11 +526,11 @@ class KeywordJob(Job):
             key = prefix + key + suffix
 
             if isinstance(value, dict):
-                KeywordJob.print_kwdict(value, key + "[")
+                KeywordJob.print_kwdict(value, f"{key}[")
 
             elif isinstance(value, list):
                 if value and isinstance(value[0], dict):
-                    KeywordJob.print_kwdict(value[0], key + "[][")
+                    KeywordJob.print_kwdict(value[0], f"{key}[][")
                 else:
                     print(key, "[]", sep="")
                     for val in value:
@@ -589,8 +578,7 @@ class DataJob(Job):
         self.filter = (lambda x: x) if private else util.filter_dict
 
     def run(self):
-        sleep = self.extractor.config("sleep-extractor")
-        if sleep:
+        if sleep := self.extractor.config("sleep-extractor"):
             time.sleep(sleep)
 
         # collect data

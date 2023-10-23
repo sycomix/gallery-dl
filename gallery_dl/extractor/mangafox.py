@@ -29,7 +29,7 @@ class MangafoxChapterExtractor(ChapterExtractor):
     def __init__(self, match):
         base, self.cstr, self.volume, self.chapter, self.minor = match.groups()
         self.urlbase = self.root + base
-        ChapterExtractor.__init__(self, match, self.urlbase + "/1.html")
+        ChapterExtractor.__init__(self, match, f"{self.urlbase}/1.html")
 
     def metadata(self, page):
         manga, pos = text.extract(page, "<title>", "</title>")
@@ -58,4 +58,4 @@ class MangafoxChapterExtractor(ChapterExtractor):
             yield text.ensure_http_scheme(url), None
 
             pnum += 2
-            page = self.request("{}/{}.html".format(self.urlbase, pnum)).text
+            page = self.request(f"{self.urlbase}/{pnum}.html").text

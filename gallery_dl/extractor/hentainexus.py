@@ -30,7 +30,7 @@ class HentainexusGalleryExtractor(GalleryExtractor):
 
     def __init__(self, match):
         self.gallery_id = match.group(1)
-        url = "{}/view/{}".format(self.root, self.gallery_id)
+        url = f"{self.root}/view/{self.gallery_id}"
         GalleryExtractor.__init__(self, match, url)
 
     def metadata(self, page):
@@ -44,8 +44,7 @@ class HentainexusGalleryExtractor(GalleryExtractor):
         }
         for key in ("Artist", "Book", "Circle", "Event", "Language",
                     "Magazine", "Parody", "Publisher", "Description"):
-            data[key.lower()] = rmve(extr(
-                'viewcolumn">' + key + '</td>', '</td>'))
+            data[key.lower()] = rmve(extr(f'viewcolumn">{key}</td>', '</td>'))
         data["lang"] = util.language_to_code(data["language"])
 
         if 'doujin' in data['tags']:
@@ -58,37 +57,30 @@ class HentainexusGalleryExtractor(GalleryExtractor):
         return data
 
     def images(self, _):
-        url = "{}/read/{}".format(self.root, self.gallery_id)
+        url = f"{self.root}/read/{self.gallery_id}"
         page = self.request(url).text
         data = json.loads(self._decode(text.extract(
             page, 'initReader("', '"')[0]))
 
-        pages = data.get("pages")
-        if pages:
+        if pages := data.get("pages"):
             return [(page, None) for page in pages]
 
         base = data["b"] + data["r"]
         gid = data["i"]
-        return [
-            ("{}{}/{}/{}".format(base, page["h"], gid, page["p"]), None)
-            for page in data["f"]
-        ]
+        return [(f'{base}{page["h"]}/{gid}/{page["p"]}', None) for page in data["f"]]
 
     @staticmethod
     def _decode(data):
         # https://hentainexus.com/static/js/reader.min.js?r=13
         primes = (2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53)
         blob = binascii.a2b_base64(data)
-        key = blob[0:64]
+        key = blob[:64]
 
         C = 0
         for k in key:
             C = C ^ k
             for _ in range(8):
-                if C & 1:
-                    C = C >> 1 ^ 0xc
-                else:
-                    C = C >> 1
+                C = C >> 1 ^ 0xc if C & 1 else C >> 1
         k = primes[C & 0x7]
 
         x = 0
@@ -129,18 +121,15 @@ class HentainexusGalleryExtractor(GalleryExtractor):
 
         jt = ''
         if event:
-            jt += '({}) '.format(event)
-        if circle:
-            jt += '[{} ({})] '.format(circle, artist)
-        else:
-            jt += '[{}] '.format(artist)
+            jt += f'({event}) '
+        jt += f'[{circle} ({artist})] ' if circle else f'[{artist}] '
         jt += title
         if parody.lower() != 'original work':
-            jt += ' ({})'.format(parody)
+            jt += f' ({parody})'
         if book:
-            jt += ' ({})'.format(book)
+            jt += f' ({book})'
         if magazine:
-            jt += ' ({})'.format(magazine)
+            jt += f' ({magazine})'
         return jt
 
 
@@ -173,9 +162,9 @@ class HentainexusSearchExtractor(Extractor):
             extr = text.extract_from(page)
 
             while True:
-                gallery_id = extr('<a href="/view/', '"')
-                if not gallery_id:
-                    break
-                yield Message.Queue, self.root + "/view/" + gallery_id, data
+                if gallery_id := extr('<a href="/view/', '"'):
+                    yield (Message.Queue, f"{self.root}/view/{gallery_id}", data)
 
+                else:
+                    break
             path = extr('class="pagination-next" href="', '"')

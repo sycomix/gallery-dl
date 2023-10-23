@@ -22,8 +22,7 @@ class GelbooruBase():
         url = post["file_url"]
         if url.startswith(("https://mp4.gelbooru.com/", "https://video-cdn")):
             md5 = post["md5"]
-            url = "https://img2.gelbooru.com/images/{}/{}/{}.webm".format(
-                md5[0:2], md5[2:4], md5)
+            url = f"https://img2.gelbooru.com/images/{md5[:2]}/{md5[2:4]}/{md5}.webm"
         return url
 
 
@@ -57,8 +56,7 @@ class GelbooruPoolExtractor(GelbooruBase, booru.BooruPoolExtractor):
     )
 
     def metadata(self):
-        url = "{}/index.php?page=pool&s=show&id={}".format(
-            self.root, self.pool_id)
+        url = f"{self.root}/index.php?page=pool&s=show&id={self.pool_id}"
         page = self.request(url).text
 
         name, pos = text.extract(page, "<h3>Now Viewing: ", "</h3>")

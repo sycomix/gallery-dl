@@ -52,7 +52,7 @@ class PinterestExtractor(Extractor):
             text.nameext_from_url(url, pin)
 
             if pin["extension"] == "m3u8":
-                url = "ytdl:" + url
+                url = f"ytdl:{url}"
                 pin["extension"] = "mp4"
                 pin["_ytdl_extra"] = {"protocol": "m3u8_native"}
 
@@ -66,24 +66,22 @@ class PinterestExtractor(Extractor):
 
     @staticmethod
     def _media_from_pin(pin):
-        videos = pin.get("videos")
-        if videos:
-            video_formats = videos["video_list"]
+        if not (videos := pin.get("videos")):
+            return pin["images"]["orig"]
+        video_formats = videos["video_list"]
 
-            for fmt in ("V_HLSV4", "V_HLSV3_WEB", "V_HLSV3_MOBILE"):
-                if fmt in video_formats:
-                    media = video_formats[fmt]
-                    break
-            else:
-                media = max(video_formats.values(),
-                            key=lambda x: x.get("width", 0))
+        for fmt in ("V_HLSV4", "V_HLSV3_WEB", "V_HLSV3_MOBILE"):
+            if fmt in video_formats:
+                media = video_formats[fmt]
+                break
+        else:
+            media = max(video_formats.values(),
+                        key=lambda x: x.get("width", 0))
 
-            if "V_720P" in video_formats:
-                media["_fallback"] = (video_formats["V_720P"]["url"],)
+        if "V_720P" in video_formats:
+            media["_fallback"] = (video_formats["V_720P"]["url"],)
 
-            return media
-
-        return pin["images"]["orig"]
+        return media
 
 
 class PinterestPinExtractor(PinterestExtractor):
@@ -159,13 +157,14 @@ class PinterestBoardExtractor(PinterestExtractor):
     def pins(self):
         board = self.board
 
-        if board["section_count"] and self.config("sections", True):
-            pins = [self.api.board_pins(board["id"])]
-            for section in self.api.board_sections(board["id"]):
-                pins.append(self.api.board_section_pins(section["id"]))
-            return itertools.chain.from_iterable(pins)
-        else:
+        if not board["section_count"] or not self.config("sections", True):
             return self.api.board_pins(board["id"])
+        pins = [self.api.board_pins(board["id"])]
+        pins.extend(
+            self.api.board_section_pins(section["id"])
+            for section in self.api.board_sections(board["id"])
+        )
+        return itertools.chain.from_iterable(pins)
 
 
 class PinterestUserExtractor(PinterestExtractor):
@@ -186,8 +185,7 @@ class PinterestUserExtractor(PinterestExtractor):
 
     def items(self):
         for board in self.api.boards(self.user):
-            url = board.get("url")
-            if url:
+            if url := board.get("url"):
                 board["_extractor"] = PinterestBoardExtractor
                 yield Message.Queue, self.root + url, board
 
@@ -273,8 +271,7 @@ class PinterestPinitExtractor(PinterestExtractor):
         self.shortened_id = match.group(1)
 
     def items(self):
-        url = "https://api.pinterest.com/url_shortener/{}/redirect".format(
-            self.shortened_id)
+        url = f"https://api.pinterest.com/url_shortener/{self.shortened_id}/redirect"
         response = self.request(url, method="HEAD", allow_redirects=False)
         location = response.headers.get("Location")
         if not location or not PinterestPinExtractor.pattern.match(location):
@@ -374,7 +371,7 @@ class PinterestAPI():
     def _login_impl(self, username, password):
         self.extractor.log.info("Logging in as %s", username)
 
-        url = self.BASE_URL + "/resource/UserSessionResource/create/"
+        url = f"{self.BASE_URL}/resource/UserSessionResource/create/"
         options = {
             "username_or_email": username,
             "password"         : password,
@@ -397,7 +394,7 @@ class PinterestAPI():
         }
 
     def _call(self, resource, options):
-        url = "{}/resource/{}Resource/get/".format(self.BASE_URL, resource)
+        url = f"{self.BASE_URL}/resource/{resource}Resource/get/"
         params = {"data": json.dumps({"options": options}), "source_url": ""}
 
         response = self.extractor.request(

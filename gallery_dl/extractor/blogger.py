@@ -36,7 +36,7 @@ class BloggerExtractor(Extractor):
     def items(self):
         yield Message.Version, 1
 
-        blog = self.api.blog_by_url("http://" + self.blog)
+        blog = self.api.blog_by_url(f"http://{self.blog}")
         blog["pages"] = blog["pages"]["totalItems"]
         blog["posts"] = blog["posts"]["totalItems"]
         blog["date"] = text.parse_datetime(blog["published"])
@@ -184,8 +184,7 @@ class BloggerSearchExtractor(BloggerExtractor):
 
     def __init__(self, match):
         BloggerExtractor.__init__(self, match)
-        query = match.group(3)
-        if query:
+        if query := match.group(3):
             self.query, self.label = query, None
         else:
             self.query, self.label = None, match.group(4)
@@ -211,21 +210,21 @@ class BloggerAPI():
         return self._call("blogs/byurl", {"url": url}, "blog")
 
     def blog_posts(self, blog_id, label=None):
-        endpoint = "blogs/{}/posts".format(blog_id)
+        endpoint = f"blogs/{blog_id}/posts"
         params = {"labels": label}
         return self._pagination(endpoint, params)
 
     def blog_search(self, blog_id, query):
-        endpoint = "blogs/{}/posts/search".format(blog_id)
+        endpoint = f"blogs/{blog_id}/posts/search"
         params = {"q": query}
         return self._pagination(endpoint, params)
 
     def post_by_path(self, blog_id, path):
-        endpoint = "blogs/{}/posts/bypath".format(blog_id)
+        endpoint = f"blogs/{blog_id}/posts/bypath"
         return self._call(endpoint, {"path": path}, "post")
 
     def _call(self, endpoint, params, notfound=None):
-        url = "https://www.googleapis.com/blogger/v3/" + endpoint
+        url = f"https://www.googleapis.com/blogger/v3/{endpoint}"
         params["key"] = self.api_key
         return self.extractor.request(
             url, params=params, notfound=notfound).json()

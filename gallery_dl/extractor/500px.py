@@ -25,7 +25,7 @@ class _500pxExtractor(Extractor):
 
     def __init__(self, match):
         Extractor.__init__(self, match)
-        self.session.headers["Referer"] = self.root + "/"
+        self.session.headers["Referer"] = f"{self.root}/"
 
     def items(self):
         first = True

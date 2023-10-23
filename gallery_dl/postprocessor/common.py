@@ -14,7 +14,7 @@ class PostProcessor():
 
     def __init__(self, job):
         name = self.__class__.__name__[:-2].lower()
-        self.log = job.get_logger("postprocessor." + name)
+        self.log = job.get_logger(f"postprocessor.{name}")
 
     def __repr__(self):
         return self.__class__.__name__

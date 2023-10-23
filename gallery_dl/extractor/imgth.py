@@ -28,10 +28,10 @@ class ImgthGalleryExtractor(Extractor):
     def __init__(self, match):
         Extractor.__init__(self, match)
         self.gid = match.group(1)
-        self.url_base = "https://imgth.com/gallery/" + self.gid + "/g/page/"
+        self.url_base = f"https://imgth.com/gallery/{self.gid}/g/page/"
 
     def items(self):
-        page = self.request(self.url_base + "0").text
+        page = self.request(f"{self.url_base}0").text
         data = self.metadata(page)
         yield Message.Version, 1
         yield Message.Directory, data
@@ -44,7 +44,7 @@ class ImgthGalleryExtractor(Extractor):
         while True:
             thumbs = text.extract(page, '<ul class="thumbnails">', '</ul>')[0]
             for url in text.extract_iter(thumbs, '<img src="', '"'):
-                yield "https://imgth.com/images" + url[24:]
+                yield f"https://imgth.com/images{url[24:]}"
             if '<li class="next">' not in page:
                 return
             pnum += 1

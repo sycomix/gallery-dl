@@ -44,8 +44,9 @@ class SlidesharePresentationExtractor(Extractor):
         self.user, self.presentation = match.groups()
 
     def items(self):
-        page = self.request("https://www.slideshare.net/" + self.user +
-                            "/" + self.presentation).text
+        page = self.request(
+            f"https://www.slideshare.net/{self.user}/{self.presentation}"
+        ).text
         data = self.get_job_metadata(page)
         imgs = self.get_image_urls(page)
         data["count"] = len(imgs)

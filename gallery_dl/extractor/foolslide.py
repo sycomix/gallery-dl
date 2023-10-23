@@ -35,7 +35,7 @@ class FoolslideBase():
         data["language"] = util.code_to_language(lang)
         data["volume"] = text.parse_int(info[2])
         data["chapter"] = text.parse_int(info[3])
-        data["chapter_minor"] = "." + info[4] if len(info) >= 5 else ""
+        data["chapter_minor"] = f".{info[4]}" if len(info) >= 5 else ""
         data["title"] = data["chapter_string"].partition(":")[2].strip()
         return data
 
@@ -95,14 +95,14 @@ class FoolslideMangaExtractor(FoolslideBase, MangaExtractor):
 
         results = []
         while True:
-            url = extr('<div class="title"><a href="', '"')
-            if not url:
+            if url := extr('<div class="title"><a href="', '"'):
+                results.append((url, self.parse_chapter_url(url, {
+                    "manga": manga, "author": author, "artist": artist,
+                    "chapter_string": extr('title="', '"'),
+                    "group"         : extr('title="', '"'),
+                })))
+            else:
                 return results
-            results.append((url, self.parse_chapter_url(url, {
-                "manga": manga, "author": author, "artist": artist,
-                "chapter_string": extr('title="', '"'),
-                "group"         : extr('title="', '"'),
-            })))
 
 
 EXTRACTORS = {

@@ -36,7 +36,7 @@ class MyhentaigalleryGalleryExtractor(GalleryExtractor):
 
     def __init__(self, match):
         self.gallery_id = match.group(1)
-        url = "{}/gallery/thumbnails/{}".format(self.root, self.gallery_id)
+        url = f"{self.root}/gallery/thumbnails/{self.gallery_id}"
         GalleryExtractor.__init__(self, match, url)
         self.session.headers["Referer"] = url
 
@@ -44,18 +44,17 @@ class MyhentaigalleryGalleryExtractor(GalleryExtractor):
         extr = text.extract_from(page)
         split = text.split_html
 
-        title = extr('<div class="comic-description">\n<h1>', '</h1>')
-        if not title:
+        if title := extr('<div class="comic-description">\n<h1>', '</h1>'):
+            return {
+                "title"     : text.unescape(title),
+                "gallery_id": text.parse_int(self.gallery_id),
+                "tags"      : split(extr('<div>\nCategories:', '</div>')),
+                "artist"    : split(extr('<div>\nArtists:'   , '</div>')),
+                "group"     : split(extr('<div>\nGroups:'    , '</div>')),
+                "parodies"  : split(extr('<div>\nParodies:'  , '</div>')),
+            }
+        else:
             raise exception.NotFoundError("gallery")
-
-        return {
-            "title"     : text.unescape(title),
-            "gallery_id": text.parse_int(self.gallery_id),
-            "tags"      : split(extr('<div>\nCategories:', '</div>')),
-            "artist"    : split(extr('<div>\nArtists:'   , '</div>')),
-            "group"     : split(extr('<div>\nGroups:'    , '</div>')),
-            "parodies"  : split(extr('<div>\nParodies:'  , '</div>')),
-        }
 
     def images(self, page):
         return [

@@ -31,7 +31,7 @@ def find(name):
     klass = None
     if name in modules:  # prevent unwanted imports
         try:
-            module = importlib.import_module("." + name, __package__)
+            module = importlib.import_module(f".{name}", __package__)
         except ImportError:
             pass
         else:

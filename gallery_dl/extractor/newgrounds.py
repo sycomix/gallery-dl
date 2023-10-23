@@ -28,7 +28,7 @@ class NewgroundsExtractor(Extractor):
     def __init__(self, match):
         Extractor.__init__(self, match)
         self.user = match.group(1)
-        self.user_root = "https://{}.newgrounds.com".format(self.user)
+        self.user_root = f"https://{self.user}.newgrounds.com"
 
     def items(self):
         self.login()
@@ -69,7 +69,7 @@ class NewgroundsExtractor(Extractor):
     def _login_impl(self, username, password):
         self.log.info("Logging in as %s", username)
 
-        url = self.root + "/passport/"
+        url = f"{self.root}/passport/"
         page = self.request(url).text
         headers = {"Origin": self.root, "Referer": url}
 
@@ -164,7 +164,7 @@ class NewgroundsExtractor(Extractor):
             date = text.parse_datetime(extr(
                 'itemprop="datePublished" content="', '"'))
         else:
-            url = self.root + "/portal/video/" + index
+            url = f"{self.root}/portal/video/{index}"
             headers = {
                 "Accept": "application/json, text/javascript, */*; q=0.01",
                 "X-Requested-With": "XMLHttpRequest",
@@ -201,7 +201,7 @@ class NewgroundsExtractor(Extractor):
             "X-Requested-With": "XMLHttpRequest",
             "Referer": root,
         }
-        url = "{}/{}/page/1".format(root, kind)
+        url = f"{root}/{kind}/page/1"
 
         while True:
             with self.request(url, headers=headers, fatal=False) as response:
@@ -265,8 +265,9 @@ class NewgroundsImageExtractor(NewgroundsExtractor):
         NewgroundsExtractor.__init__(self, match)
         if match.group(2):
             self.user = match.group(2)
-            self.post_url = "https://www.newgrounds.com/art/view/{}/{}".format(
-                self.user, match.group(3))
+            self.post_url = (
+                f"https://www.newgrounds.com/art/view/{self.user}/{match.group(3)}"
+            )
         else:
             self.post_url = text.ensure_http_scheme(match.group(0))
 
@@ -371,12 +372,15 @@ class NewgroundsUserExtractor(NewgroundsExtractor):
     )
 
     def items(self):
-        base = self.user_root + "/"
-        return self._dispatch_extractors((
-            (NewgroundsArtExtractor   , base + "art"),
-            (NewgroundsAudioExtractor , base + "audio"),
-            (NewgroundsMoviesExtractor, base + "movies"),
-        ), ("art",))
+        base = f"{self.user_root}/"
+        return self._dispatch_extractors(
+            (
+                (NewgroundsArtExtractor, f"{base}art"),
+                (NewgroundsAudioExtractor, f"{base}audio"),
+                (NewgroundsMoviesExtractor, f"{base}movies"),
+            ),
+            ("art",),
+        )
 
 
 class NewgroundsFavoriteExtractor(NewgroundsExtractor):
@@ -415,7 +419,7 @@ class NewgroundsFavoriteExtractor(NewgroundsExtractor):
         }
 
         while True:
-            url = "{}/favorites/{}/{}".format(self.user_root, kind, num)
+            url = f"{self.user_root}/favorites/{kind}/{num}"
             response = self.request(url, headers=headers)
             if response.history:
                 return

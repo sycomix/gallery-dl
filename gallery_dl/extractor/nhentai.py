@@ -120,11 +120,11 @@ class NhentaiSearchExtractor(NhentaiBase, Extractor):
         yield Message.Version, 1
         data = {"_extractor": NhentaiGalleryExtractor}
         for gallery_id in self._pagination(self.params):
-            url = "{}/g/{}/".format(self.root, gallery_id)
+            url = f"{self.root}/g/{gallery_id}/"
             yield Message.Queue, url, data
 
     def _pagination(self, params):
-        url = "{}/search/".format(self.root)
+        url = f"{self.root}/search/"
         params["page"] = text.parse_int(params.get("page"), 1)
 
         while True:

@@ -69,12 +69,12 @@ class RedditExtractor(Extractor):
                             text.nameext_from_url(url, submission)
                             if videos == "ytdl":
                                 url = "https://www.reddit.com" + \
-                                    submission["permalink"]
+                                        submission["permalink"]
                             else:
                                 submission["_ytdl_extra"] = {
                                     "title": submission["title"],
                                 }
-                            yield Message.Url, "ytdl:" + url, submission
+                            yield (Message.Url, f"ytdl:{url}", submission)
 
                     elif not submission["is_self"]:
                         urls.append((url, submission))
@@ -84,23 +84,26 @@ class RedditExtractor(Extractor):
 
                 if self.api.comments:
                     if submission:
-                        for url in text.extract_iter(
-                                submission["selftext_html"] or "",
-                                ' href="', '"'):
-                            urls.append((url, submission))
+                        urls.extend(
+                            (url, submission)
+                            for url in text.extract_iter(
+                                submission["selftext_html"] or "", ' href="', '"'
+                            )
+                        )
                     for comment in comments:
-                        for url in text.extract_iter(
-                                comment["body_html"] or "", ' href="', '"'):
-                            urls.append((url, comment))
-
+                        urls.extend(
+                            (url, comment)
+                            for url in text.extract_iter(
+                                comment["body_html"] or "", ' href="', '"'
+                            )
+                        )
                 for url, data in urls:
                     if not url or url[0] == "#":
                         continue
                     if url[0] == "/":
-                        url = "https://www.reddit.com" + url
+                        url = f"https://www.reddit.com{url}"
 
-                    match = match_submission(url)
-                    if match:
+                    if match := match_submission(url):
                         extra.append(match.group(1))
                     elif not match_user(url) and not match_subreddit(url):
                         yield Message.Queue, text.unescape(url), data
@@ -130,8 +133,7 @@ class RedditExtractor(Extractor):
                     submission["id"], item["media_id"], data.get("status"))
                 continue
             src = data["s"]
-            url = src.get("u") or src.get("gif") or src.get("mp4")
-            if url:
+            if url := src.get("u") or src.get("gif") or src.get("mp4"):
                 yield url.partition("?")[0].replace("/preview.", "/i.", 1)
             else:
                 self.log.error(
@@ -286,28 +288,28 @@ class RedditAPI():
 
         token = extractor.config("refresh-token")
         if token is None or token == "cache":
-            key = "#" + self.client_id
+            key = f"#{self.client_id}"
             self.refresh_token = _refresh_token_cache(key)
         else:
             self.refresh_token = token
 
     def submission(self, submission_id):
         """Fetch the (submission, comments)=-tuple for a submission id"""
-        endpoint = "/comments/" + submission_id + "/.json"
-        link_id = "t3_" + submission_id if self.morecomments else None
+        endpoint = f"/comments/{submission_id}/.json"
+        link_id = f"t3_{submission_id}" if self.morecomments else None
         submission, comments = self._call(endpoint, {"limit": self.comments})
         return (submission["data"]["children"][0]["data"],
                 self._flatten(comments, link_id) if self.comments else ())
 
     def submissions_subreddit(self, subreddit, params):
         """Collect all (submission, comments)-tuples of a subreddit"""
-        endpoint = "/r/" + subreddit + "/.json"
+        endpoint = f"/r/{subreddit}/.json"
         params["limit"] = 100
         return self._pagination(endpoint, params)
 
     def submissions_user(self, user, params):
         """Collect all (submission, comments)-tuples posted by a user"""
-        endpoint = "/user/" + user + "/.json"
+        endpoint = f"/user/{user}/.json"
         params["limit"] = 100
         return self._pagination(endpoint, params)
 
@@ -357,12 +359,13 @@ class RedditAPI():
 
         if response.status_code != 200:
             self.log.debug("Server response: %s", data)
-            raise exception.AuthenticationError('"{}: {}"'.format(
-                data.get("error"), data.get("message")))
+            raise exception.AuthenticationError(
+                f'"{data.get("error")}: {data.get("message")}"'
+            )
         return "Bearer " + data["access_token"]
 
     def _call(self, endpoint, params):
-        url = "https://oauth.reddit.com" + endpoint
+        url = f"https://oauth.reddit.com{endpoint}"
         params["raw_json"] = "1"
         self.authenticate()
         response = self.extractor.request(
@@ -396,12 +399,12 @@ class RedditAPI():
             data = self._call(endpoint, params)["data"]
 
             for child in data["children"]:
-                kind = child["kind"]
                 post = child["data"]
 
                 if (date_min <= post["created_utc"] <= date_max and
                         id_min <= self._decode(post["id"]) <= id_max):
 
+                    kind = child["kind"]
                     if kind == "t3":
                         if post["num_comments"] and self.comments:
                             try:
@@ -445,6 +448,4 @@ class RedditAPI():
 
 @cache(maxage=100*365*24*3600, keyarg=0)
 def _refresh_token_cache(token):
-    if token and token[0] == "#":
-        return None
-    return token
+    return None if token and token[0] == "#" else token

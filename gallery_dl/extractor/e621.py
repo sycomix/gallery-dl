@@ -25,7 +25,7 @@ class E621Extractor(danbooru.DanbooruExtractor):
 
     def __init__(self, match):
         super().__init__(match)
-        self.root = "https://e{}.net".format(match.group(1))
+        self.root = f"https://e{match.group(1)}.net"
         self.headers = {"User-Agent": "gallery-dl/1.14.0 (by mikf)"}
 
     def request(self, url, **kwargs):
@@ -39,8 +39,9 @@ class E621Extractor(danbooru.DanbooruExtractor):
 
             if not file["url"]:
                 md5 = file["md5"]
-                file["url"] = "https://static1.{}/data/{}/{}/{}.{}".format(
-                    self.root[8:], md5[0:2], md5[2:4], md5, file["ext"])
+                file[
+                    "url"
+                ] = f'https://static1.{self.root[8:]}/data/{md5[:2]}/{md5[2:4]}/{md5}.{file["ext"]}'
 
             post["filename"] = file["md5"]
             post["extension"] = file["ext"]
@@ -80,7 +81,8 @@ class E621PoolExtractor(E621Extractor, danbooru.DanbooruPoolExtractor):
         id_to_post = {
             post["id"]: post
             for post in self._pagination(
-                "/posts.json", {"tags": "pool:" + self.pool_id})
+                "/posts.json", {"tags": f"pool:{self.pool_id}"}
+            )
         }
 
         posts = []

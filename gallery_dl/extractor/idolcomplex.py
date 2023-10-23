@@ -33,8 +33,7 @@ class IdolcomplexExtractor(SankakuExtractor):
         self.extags = self.config("tags", False)
         self.wait_min = self.config("wait-min", 3.0)
         self.wait_max = self.config("wait-max", 6.0)
-        if self.wait_max < self.wait_min:
-            self.wait_max = self.wait_min
+        self.wait_max = max(self.wait_max, self.wait_min)
 
     def items(self):
         self.login()
@@ -70,7 +69,7 @@ class IdolcomplexExtractor(SankakuExtractor):
     def _login_impl(self, username, password):
         self.log.info("Logging in as %s", username)
 
-        url = self.root + "/user/authenticate"
+        url = f"{self.root}/user/authenticate"
         data = {
             "url"           : "",
             "user[name]"    : username,
@@ -79,14 +78,14 @@ class IdolcomplexExtractor(SankakuExtractor):
         }
         response = self.request(url, method="POST", data=data)
 
-        if not response.history or response.url != self.root + "/user/home":
+        if not response.history or response.url != f"{self.root}/user/home":
             raise exception.AuthenticationError()
         cookies = response.history[0].cookies
         return {c: cookies[c] for c in self.cookienames}
 
     def _parse_post(self, post_id):
         """Extract metadata of a single post"""
-        url = self.root + "/post/show/" + post_id
+        url = f"{self.root}/post/show/{post_id}"
         page = self.request(url, retries=10).text
         extr = text.extract
 
@@ -114,7 +113,7 @@ class IdolcomplexExtractor(SankakuExtractor):
             "vote_count": text.parse_int(vcnt),
             "created_at": created,
             "rating": (rating or "?")[0].lower(),
-            "file_url": "https:" + text.unescape(file_url),
+            "file_url": f"https:{text.unescape(file_url)}",
             "width": text.parse_int(width),
             "height": text.parse_int(height),
         }
@@ -126,7 +125,7 @@ class IdolcomplexExtractor(SankakuExtractor):
             for tag_type, tag_name in pattern.findall(tags_html or ""):
                 tags[tag_type].append(text.unquote(tag_name))
             for key, value in tags.items():
-                data["tags_" + key] = " ".join(value)
+                data[f"tags_{key}"] = " ".join(value)
 
         return data
 
@@ -237,7 +236,7 @@ class IdolcomplexPoolExtractor(IdolcomplexExtractor):
         return {"pool": self.pool_id}
 
     def post_ids(self):
-        url = self.root + "/pool/show/" + self.pool_id
+        url = f"{self.root}/pool/show/{self.pool_id}"
         params = {"page": self.start_page}
 
         while True:

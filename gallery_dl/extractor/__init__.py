@@ -136,8 +136,7 @@ modules = [
 def find(url):
     """Find a suitable extractor for the given URL"""
     for cls in _list_classes():
-        match = cls.pattern.match(url)
-        if match:
+        if match := cls.pattern.match(url):
             return cls(match)
     return None
 
@@ -178,7 +177,7 @@ def _list_classes():
     yield from _cache
 
     for module_name in _module_iter:
-        module = importlib.import_module("."+module_name, __package__)
+        module = importlib.import_module(f".{module_name}", __package__)
         yield from add_module(module)
 
     globals()["_list_classes"] = lambda : _cache

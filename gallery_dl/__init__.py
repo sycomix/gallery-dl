@@ -96,14 +96,12 @@ def parse_inputfile(file, log):
             key = key.strip().split(".")
             conf.append((key[:-1], key[-1], value))
 
+        elif gconf or lconf:
+            yield util.ExtendedUrl(line, gconf, lconf)
+            gconf = []
+            lconf = []
         else:
-            # url
-            if gconf or lconf:
-                yield util.ExtendedUrl(line, gconf, lconf)
-                gconf = []
-                lconf = []
-            else:
-                yield line
+            yield line
 
 
 def main():
@@ -125,7 +123,7 @@ def main():
         if args.postprocessors:
             config.set((), "postprocessors", args.postprocessors)
         if args.abort:
-            config.set((), "skip", "abort:" + str(args.abort))
+            config.set((), "skip", f"abort:{str(args.abort)}")
         for opts in args.options:
             config.set(*opts)
 
@@ -154,7 +152,7 @@ def main():
                     cwd=os.path.dirname(os.path.abspath(__file__)),
                 ).communicate()
                 if out and not err:
-                    head = " - Git HEAD: " + out.decode().rstrip()
+                    head = f" - Git HEAD: {out.decode().rstrip()}"
             except (OSError, subprocess.SubprocessError):
                 pass
 
@@ -179,8 +177,7 @@ def main():
                 print(extr.__doc__)
                 print("Category:", extr.category,
                       "- Subcategory:", extr.subcategory)
-                test = next(extr._get_tests(), None)
-                if test:
+                if test := next(extr._get_tests(), None):
                     print("Example :", test[0])
                 print()
         elif args.clear_cache:
@@ -221,10 +218,9 @@ def main():
                 except OSError as exc:
                     log.warning("input file: %s", exc)
 
-            # unsupported file logging handler
-            handler = output.setup_logging_handler(
-                "unsupportedfile", fmt="{message}")
-            if handler:
+            if handler := output.setup_logging_handler(
+                "unsupportedfile", fmt="{message}"
+            ):
                 ulog = logging.getLogger("unsupported")
                 ulog.addHandler(handler)
                 ulog.propagate = False

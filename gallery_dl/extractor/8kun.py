@@ -37,7 +37,7 @@ class _8kunThreadExtractor(Extractor):
         self.board, self.thread = match.groups()
 
     def items(self):
-        url = "https://8kun.top/{}/res/{}.json".format(self.board, self.thread)
+        url = f"https://8kun.top/{self.board}/res/{self.thread}.json"
         posts = self.request(url).json()["posts"]
         title = posts[0].get("sub") or text.remove_html(posts[0]["com"])
         process = self._process
@@ -89,13 +89,12 @@ class _8kunBoardExtractor(Extractor):
         self.board = match.group(1)
 
     def items(self):
-        url = "https://8kun.top/{}/threads.json".format(self.board)
+        url = f"https://8kun.top/{self.board}/threads.json"
         threads = self.request(url).json()
 
         for page in threads:
             for thread in page["threads"]:
-                url = "https://8kun.top/{}/res/{}.html".format(
-                    self.board, thread["no"])
+                url = f'https://8kun.top/{self.board}/res/{thread["no"]}.html'
                 thread["page"] = page["page"]
                 thread["_extractor"] = _8kunThreadExtractor
                 yield Message.Queue, url, thread
